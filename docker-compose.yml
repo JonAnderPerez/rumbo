@@ -1,6 +1,7 @@
 services:
   rumbo:
     build: .
+    image: rumbo:latest
     container_name: rumbo
     restart: unless-stopped
     ports:
