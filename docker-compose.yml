@@ -12,6 +12,6 @@ services:
 x-casaos:
   title:
     es_es: Rumbo
-  icon: https://github.com/JonAnderPerez/rumbo/raw/main/docs/logo/rumboicono.png
+  icon: https://github.com/JonAnderPerez/rumbo/raw/main/docs/logo/rumbo-icono.png
   port_map: "8765"
   index: /
