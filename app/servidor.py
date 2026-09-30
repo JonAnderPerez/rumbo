@@ -484,7 +484,7 @@ def main():
     srv = None
     for puerto in range(PUERTO, PUERTO + 10):
         try:
-            srv = make_server("127.0.0.1", puerto, app, threaded=True)
+            srv = make_server("0.0.0.0", puerto, app, threaded=True)
             break
         except OSError:
             continue

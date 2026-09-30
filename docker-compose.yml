@@ -1,0 +1,17 @@
+services:
+  rumbo:
+    build: .
+    container_name: rumbo
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./mis_datos:/app/mis_datos
+    environment:
+      - TZ=Europe/Madrid
+x-casaos:
+  title:
+    es_es: Rumbo
+  icon: https://github.com/JonAnderPerez/rumbo/raw/main/docs/logo/rumboicono.png
+  port_map: "8765"
+  index: /
