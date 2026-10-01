@@ -372,14 +372,14 @@
       return `<tr><td>${fecha(m.fecha)}</td><td style="text-align:left">${p ? `<i class="pt" style="background:var(--s${p.slot || 1})"></i>` : ""}${esc(nombre(p))}</td>
         <td style="text-align:left">${esc(E.tiposMov[m.tipo] || m.tipo)}</td>
         <td>${m.unidades ? num(m.unidades) : "—"}</td>
-        <td class="${m.tipo === "compra" || m.tipo === "comision" ? "" : "pos"}">${eur(m.importe)}</td>
+        <td class="${m.tipo === "compra" || m.tipo === "comision" || m.tipo === "traspaso" ? "" : "pos"}">${eur(m.importe)}</td>
         <td>${precio ? num(precio) + " €" : "—"}</td>
         <td class="nota" title="${esc(m.nota)}">${esc(m.nota || "")}</td>
         <td class="acc"><button data-acc="editarMov" data-id="${esc(m.id)}">Editar</button>
           <button data-acc="borrarMov" data-id="${esc(m.id)}">Borrar</button></td></tr>`;
     }).join("");
     return `<section class="tarjeta"><header><h2>Movimientos</h2>
-        <span class="subt">Compras, ventas, dividendos y comisiones</span><span class="sp"></span>
+        <span class="subt">Compras, ventas, traspasos de criptomonedas, dividendos y comisiones</span><span class="sp"></span>
         <select id="edFiltro" aria-label="Filtrar por producto"><option value="todos">Todos los productos</option>
           ${cotizables.map(p => `<option value="${esc(p.id)}"${p.id === E.filtro ? " selected" : ""}>${esc(nombre(p))}</option>`).join("")}</select>
         <button class="btn prim" data-acc="nuevoMov">+ Añadir movimiento</button></header>
@@ -393,6 +393,7 @@
   const AYUDA_IMPORTE = {
     compra: "Lo que salió de tu cuenta, con las comisiones incluidas.",
     venta: "Lo que te ingresaron, ya descontadas las comisiones.",
+    traspaso: "Coste que retiras del total aportado al transferir estas unidades; no cuenta como venta ni genera beneficio realizado.",
     dividendo: "Lo que te ingresaron por el dividendo o el cupón.",
     comision: "Comisiones sueltas, como la de custodia. Las de compra y venta ya van dentro de su importe.",
   };
@@ -402,10 +403,8 @@
     if (!cotizables.length) { alert("Primero añade un producto en «Productos»."); return; }
     const nuevo = !m;
     m = m || { fecha: hoy(), tipo: "compra", producto: productoId || (E.filtro !== "todos" ? E.filtro : cotizables[0].id) };
-    const pildoras = Object.entries(E.tiposMov).map(([k, v]) =>
-      `<label><input type="radio" name="tipo" value="${esc(k)}"><span>${esc(k === "dividendo" ? "Dividendo" : v)}</span></label>`).join("");
     const f = abreModal(nuevo ? "Añadir movimiento" : "Editar movimiento", `
-      <div class="pildoras">${pildoras}</div>
+      <div class="pildoras"></div>
       <div class="rejilla" style="margin-top:18px">
         ${campo("Producto", `<select name="producto">${cotizables.map(p =>
           `<option value="${esc(p.id)}">${esc(nombre(p))}</option>`).join("")}</select>`, "", "ancho")}
@@ -424,13 +423,24 @@
       recuerda.guarda("patrimonio.editor", "movimientos");
       return null;
     }, nuevo ? "Guardar movimiento" : "Guardar cambios");
-    rellena(f, { ...m, unidades: decimal(m.unidades || ""), importe: decimal(m.importe), comision: decimal(m.comision) });
+    rellena(f, { producto: m.producto, fecha: m.fecha, unidades: decimal(m.unidades || ""),
+      importe: decimal(m.importe), comision: decimal(m.comision), nota: m.nota || "" });
+    const dibujaTipos = tipo => {
+      const tipos = Object.entries(E.tiposMov).filter(([clave]) => clave !== "traspaso" ||
+        prod(f.elements.producto.value)?.tipo === "cripto");
+      f.querySelector(".pildoras").innerHTML = tipos.map(([k, v]) =>
+        `<label><input type="radio" name="tipo" value="${esc(k)}"><span>${esc(k === "dividendo" ? "Dividendo" : v)}</span></label>`).join("");
+      f.elements.tipo.value = tipos.some(([clave]) => clave === tipo) ? tipo : "compra";
+    };
+    dibujaTipos(m.tipo);
     const ajusta = () => {
       const t = f.elements.tipo.value;
       const p = prod(f.elements.producto.value);
-      const conUnid = t === "compra" || t === "venta";
+      const conUnid = t === "compra" || t === "venta" || t === "traspaso";
+      const conCom = t === "compra" || t === "venta" || t === "traspaso";
       f.querySelector(".siUnid").hidden = !conUnid;
-      f.querySelector(".siCom").hidden = !conUnid;
+      f.querySelector(".siCom").hidden = !conCom;
+      f.elements.comision.disabled = !conCom;
       // Con la caja de unidades oculta, la del importe ocupa su hueco sin descuadrar la rejilla.
       $("#mAyuda").textContent = AYUDA_IMPORTE[t] + (p && manual(p) && t === "compra"
         ? " Como este producto se valora a mano, las unidades son opcionales." : "");
@@ -439,7 +449,10 @@
       $("#mPrecio").textContent = conUnid && u > 0 && imp > 0 ? `${num((imp - com) / u)} € / unidad` : "";
     };
     f.oninput = ajusta;
-    f.onchange = ajusta;
+    f.onchange = e => {
+      if (e.target.name === "producto") dibujaTipos(f.elements.tipo.value);
+      ajusta();
+    };
     ajusta();
   }
 

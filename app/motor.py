@@ -433,7 +433,7 @@ CLASE_DEFECTO = {
 }
 FUENTES = {"morningstar": "Morningstar", "yahoo": "Yahoo Finance",
            "coingecko": "CoinGecko", "manual": "Valor anotado a mano"}
-ORDEN_TIPO = {"compra": 0, "comision": 1, "dividendo": 2, "venta": 3}
+ORDEN_TIPO = {"compra": 0, "comision": 1, "dividendo": 2, "venta": 3, "traspaso": 4}
 
 # Carteras de referencia para «¿y si lo hubieras metido en un indexado?». Son ETF
 # reales que cotizan en euros; las piezas son (ticker de Yahoo, peso).
@@ -471,8 +471,8 @@ def clave_serie(p):
 def aplicar_movimientos(p, movs):
     """
     Recorre los movimientos de un producto por fecha. Las ventas descuentan el coste
-    por FIFO (primero lo mas antiguo), como hace Hacienda: el coste de lo vendido sale
-    de "aportado" y la diferencia con lo cobrado es plusvalia realizada.
+    por FIFO y reconocen su plusvalia; los traspasos descuentan el importe indicado de
+    "aportado" sin reconocer beneficio realizado.
 
     Devuelve eventos (fecha, +-unidades, +-aportado) para las series diarias y flujos
     (fecha, importe) para la TIR, en negativo lo que sale de tu cuenta.
@@ -504,6 +504,29 @@ def aplicar_movimientos(p, movs):
             realizado += imp - coste
             eventos.append((f, -(u - quedan), -coste))
             flujos.append((f, imp))
+        elif t == "traspaso":
+            base_antes = sum(lote[1] for lote in lotes)
+            quedan = u
+            while quedan > 1e-9 and lotes:
+                lu, lc, ref = lotes[0]
+                toma = min(lu, quedan)
+                parte = lc * toma / lu if lu else 0.0
+                quedan -= toma
+                vendidas.add(ref)
+                lotes[0] = [lu - toma, lc - parte, ref]
+                if lotes[0][0] <= 1e-9:
+                    lotes.pop(0)
+            if quedan > 1e-6:
+                aviso(f"{p['corto']}: el {f} traspasas más unidades de las que tienes. Revisa sus movimientos.")
+            # El importe es el coste que se retira de la cartera, no un precio de venta.
+            base_restante = sum(lote[1] for lote in lotes)
+            if base_restante > 1e-9:
+                factor = max(0.0, (base_antes - imp) / base_restante)
+                for lote in lotes:
+                    lote[1] *= factor
+            eventos.append((f, -(u - quedan), -imp))
+            flujos.append((f, imp))
+            comisiones += float(m.get("comision") or 0)
         elif t == "dividendo":
             realizado += imp
             flujos.append((f, imp))

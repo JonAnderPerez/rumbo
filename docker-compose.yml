@@ -10,6 +10,15 @@ services:
       - ./mis_datos:/app/mis_datos
     environment:
       - TZ=Europe/Madrid
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./app
+          target: /app/app
+        - action: rebuild
+          path: ./requirements.txt
+        - action: rebuild
+          path: ./Dockerfile
 x-casaos:
   title:
     es_es: Rumbo

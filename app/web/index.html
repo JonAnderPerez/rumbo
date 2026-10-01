@@ -331,7 +331,7 @@ table.dt td.nota{max-width:220px;overflow:hidden;text-overflow:ellipsis;text-ali
 /* ---- Ventana modal ---- */
 :root{--flecha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23898781' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 .modal{border:0;border-radius:18px;background:var(--sup);color:var(--tinta);padding:0;text-align:left;
-  width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 32px);
+  width:min(820px,calc(100vw - 24px));max-height:calc(100vh - 32px);
   box-shadow:0 30px 90px rgba(0,0,0,.45),0 0 0 1px var(--borde)}
 .modal[open]{animation:entra .18s ease-out}
 @keyframes entra{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
@@ -395,12 +395,12 @@ table.dt td.nota{max-width:220px;overflow:hidden;text-overflow:ellipsis;text-ali
 .color input:checked + i{box-shadow:0 0 0 2px var(--sup),0 0 0 4px var(--c)}
 .color input:focus-visible + i{outline:2px solid var(--tinta);outline-offset:3px}
 
-.pildoras{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--sup2);border:1px solid var(--borde);
-  border-radius:13px;padding:4px}
-.pildoras label{position:relative;cursor:pointer}
+.pildoras{display:flex;gap:4px;background:var(--sup2);border:1px solid var(--borde);border-radius:13px;
+  padding:4px;overflow-x:auto}
+.pildoras label{position:relative;cursor:pointer;flex:1 0 auto}
 .pildoras input{position:absolute;opacity:0;width:0;height:0}
 .pildoras span{display:block;text-align:center;padding:9px 6px;border-radius:10px;font-size:13.5px;font-weight:600;
-  color:var(--tinta3);transition:.12s}
+  color:var(--tinta3);transition:.12s;white-space:nowrap}
 .pildoras label:hover span{color:var(--tinta)}
 .pildoras input:checked + span{background:var(--sup);color:var(--tinta);box-shadow:0 1px 3px rgba(0,0,0,.22),0 0 0 1px var(--borde)}
 .pildoras input:focus-visible + span{outline:2px solid var(--s1);outline-offset:-2px}

@@ -12,11 +12,11 @@ import os
 import re
 import unicodedata
 
-from .motor import TIPOS, FUENTES, num_es
+from .motor import TIPOS, FUENTES, aplicar_movimientos, num_es
 
 COPIAS_MAX = 20
-TIPOS_MOV = {"compra": "Compra", "venta": "Venta", "dividendo": "Dividendo o cupón",
-             "comision": "Comisión"}
+TIPOS_MOV = {"compra": "Compra", "venta": "Venta", "traspaso": "Traspaso",
+             "dividendo": "Dividendo o cupón", "comision": "Comisión"}
 SOLO_SALDO = ("efectivo", "deuda")   # tipos que se siguen solo con saldos anotados
 
 CARTERA_VACIA = {
@@ -222,7 +222,7 @@ def unidades_a(cfg, pid, fecha_iso, excluir=None):
         if m.get("producto") != pid or m.get("id") == excluir or m["fecha"] > fecha_iso:
             continue
         u = float(m.get("unidades") or 0)
-        total += u if m.get("tipo") == "compra" else -u if m.get("tipo") == "venta" else 0
+        total += u if m.get("tipo") == "compra" else -u if m.get("tipo") in ("venta", "traspaso") else 0
     return total
 
 
@@ -236,7 +236,9 @@ def guarda_movimiento(cfg, datos):
                        "anótalo en «Saldos y valores».")
     tipo = datos.get("tipo")
     if tipo not in TIPOS_MOV:
-        errores.append("Elige el tipo de movimiento: compra, venta, dividendo o comisión.")
+        errores.append("Elige el tipo de movimiento: compra, venta, traspaso, dividendo o comisión.")
+    elif tipo == "traspaso" and p and p.get("tipo") != "cripto":
+        errores.append("El traspaso solo está disponible para criptomonedas.")
     f = fecha(datos.get("fecha"), errores)
     importe = numero(datos.get("importe"), "el importe", errores, mayor_que=0)
     cotiza = bool(p and p.get("fuente") != "manual")
@@ -247,14 +249,28 @@ def guarda_movimiento(cfg, datos):
     elif tipo == "venta":
         unidades = numero(datos.get("unidades"), "cuántas unidades vendiste", errores,
                           obligatorio=cotiza, minimo=0) or 0.0
+    elif tipo == "traspaso":
+        unidades = numero(datos.get("unidades"), "cuántas unidades traspasaste", errores,
+                          obligatorio=True, mayor_que=0) or 0.0
     comision = numero(datos.get("comision"), "la comisión", errores, obligatorio=False, minimo=0)
     if comision and importe and comision >= importe:
         errores.append("La comisión no puede ser mayor que el importe total.")
-    if not errores and tipo == "venta" and cotiza and unidades:
+    tenias = None
+    if not errores and (tipo == "traspaso" or (tipo == "venta" and cotiza)) and unidades:
         tenias = unidades_a(cfg, p["id"], f, excluir=datos.get("id"))
         if unidades > tenias + 1e-6:
+            operacion = "traspasando" if tipo == "traspaso" else "vendiendo"
             errores.append(f"El {fmt_fecha(f)} solo tenías {fmt_num(tenias)} unidades de "
-                           f"«{p.get('corto') or p['nombre']}» y estás vendiendo {fmt_num(unidades)}.")
+                           f"«{p.get('corto') or p['nombre']}» y estás {operacion} {fmt_num(unidades)}.")
+    if not errores and tipo == "traspaso":
+        anteriores = [m for m in cfg.get("movimientos", [])
+                      if m.get("producto") == p["id"] and m.get("id") != datos.get("id") and m["fecha"] <= f]
+        aportado = sum(evento[2] for evento in aplicar_movimientos(p, anteriores)["eventos"])
+        if importe > aportado + 0.01:
+            errores.append(f"El importe del traspaso ({fmt_num(importe)} €) supera los "
+                           f"{fmt_num(max(0.0, aportado))} € que quedan aportados en «{p.get('corto') or p['nombre']}».")
+        elif tenias is not None and unidades >= tenias - 1e-6 and abs(importe - aportado) > 0.01:
+            errores.append("Al traspasar todas las unidades, el importe debe coincidir con todo lo aportado.")
     if errores:
         raise ErrorValidacion(errores)
 

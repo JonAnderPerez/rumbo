@@ -350,6 +350,10 @@ Lee el mensaje de la ventana: casi siempre dice qué pasa. Lo más habitual es n
 - Los datos están en `mis_datos/cartera.json`: productos, movimientos y valores anotados.
 - Para arrancarlo a mano: `uv run python -m app`.
 
+### Desarrollo con Docker
+
+Con Docker Compose 2.22 o superior, ejecuta `docker compose watch` desde la carpeta del proyecto. Los cambios en `app/` se sincronizan y reinician la app automáticamente; si cambian `Dockerfile` o `requirements.txt`, Compose reconstruye la imagen. La cartera sigue guardándose en `mis_datos/`.
+
 ```
 Iniciar.bat / Iniciar.command   lanzadores de doble clic (texto plano)
 app/

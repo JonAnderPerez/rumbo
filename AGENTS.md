@@ -8,7 +8,7 @@ Rumbo es un panel local de patrimonio: un servidor Flask calcula métricas finan
 |---|---|
 | Ejecutar (documentado) | `uv run python -m app` |
 | Lanzar en Windows/macOS | `Iniciar.bat` / `Iniciar.command` |
-| Ejecutar con Docker Compose | `docker compose up --build` |
+| Ejecutar con Docker Compose | `docker compose up --build` (desarrollo con recarga: `docker compose watch`) |
 | Tests / lint | No hay suite ni comandos configurados en el repositorio (`POR CONFIRMAR` si se han definido fuera de él). |
 
 No hay un comando de build local independiente. Para validar cambios, usa una carpeta de datos temporal (`PATRIMONIO_DATOS`) y un puerto libre (`PATRIMONIO_PUERTO`); no apuntes pruebas a una cartera personal.
