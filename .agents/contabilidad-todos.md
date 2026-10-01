@@ -200,9 +200,9 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 
 ### 7. Documentar y conservar las superficies existentes
 
-- [ ] Actualizar README y `.agents/architecture.md`, `.agents/workflows.md` y/o `.agents/conventions.md` si cambian las instrucciones o el mapa de módulos.
-- [ ] Documentar ubicación, copia/restauración y versión del fichero independiente de Contabilidad.
-- [ ] Revisar que la exportación estática sigue siendo autónoma y que no incluye los datos de Contabilidad salvo decisión explícita futura.
+- [x] Actualizar README y `.agents/architecture.md`, `.agents/workflows.md` y/o `.agents/conventions.md` si cambian las instrucciones o el mapa de módulos.
+- [x] Documentar ubicación, copia/restauración y versión del fichero independiente de Contabilidad.
+- [x] Revisar que la exportación estática sigue siendo autónoma y que no incluye los datos de Contabilidad salvo decisión explícita futura.
 - **Aceptación:** las instrucciones coinciden con la implementación y no afirman soporte de importación Excel/CSV.
 
 ### 8. Validar sin datos personales

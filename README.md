@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<h3 align="center">Tu patrimonio neto en un panel bonito, claro y privado, que funciona en tu propio ordenador.</h3>
+<h3 align="center">Tu patrimonio neto en un panel bonito y claro, pensado para funcionar en tu propio ordenador.</h3>
 
 Fondos, ETF, acciones, criptomonedas, oro, planes de pensiones, cuentas del banco, un piso… Metes lo que tienes una vez y **Rumbo** descarga los precios solo, calcula cuánto has ganado, tu rentabilidad real (TIR) y te dice si lo estás haciendo mejor o peor que un indexado.
 
@@ -24,6 +24,7 @@ Herramienta **gratuita** hecha por **Dani Dominguez Quant**.
 - [Instalación en Mac](#instalación-en-mac)
 - [Primer uso](#primer-uso)
 - [Meter tus datos](#meter-tus-datos)
+- [Contabilidad](#contabilidad)
 - [Importar de golpe (MyInvestor, Excel o con una IA)](#importar-de-golpe)
 - [El día a día](#el-día-a-día)
 - [¿Y si lo hubieras metido todo en un indexado?](#y-si-lo-hubieras-metido-todo-en-un-indexado)
@@ -48,7 +49,7 @@ Herramienta **gratuita** hecha por **Dani Dominguez Quant**.
 - **Importación de golpe**: el CSV de MyInvestor, una plantilla de Excel o el extracto de cualquier banco convertido con una IA gratuita.
 - **Nunca tocas un archivo a mano**: todo se hace con formularios, con validación y mensajes en castellano llano.
 - **Copias de seguridad automáticas** y exportación del panel a una página web (con opción de **ocultar los importes**).
-- Tema claro u oscuro, y **tus datos nunca salen de tu ordenador**.
+- Tema claro u oscuro. La cartera y la contabilidad se guardan en archivos locales; las consultas de precios no incluyen tus datos.
 
 | | |
 |---|---|
@@ -251,6 +252,19 @@ EXTRACTO:
 
 ---
 
+## Contabilidad
+
+En el selector junto a **Rumbo**, elige **Contabilidad** para abrir el área anual, separada de **Mi Patrimonio**. Selecciona un ejercicio existente o crea uno nuevo. Cada ejercicio mantiene sus propios importes y configuración.
+
+- Anota importes mes a mes en **Ingresos**, **Gastos**, **Gastos de casa**, **Real** y **Ahorros**. Un mes vacío significa «sin registrar»; introduce `0` si el valor conocido es cero.
+- Puedes ajustar la configuración salarial, las pagas extra y las reglas porcentuales, y añadir o renombrar categorías. Pulsa **«Guardar cambios»** para guardar las ediciones; añadir una categoría la guarda inmediatamente. Renombrarla conserva sus importes.
+- Los totales y subtotales se calculan automáticamente. El subtotal resta de los ingresos computables los gastos personales y de casa; **Real** y **Ahorros** son bloques de comparación/detalle y no se restan otra vez. Los meses incompletos no se convierten en ceros.
+- La nómina y sus netos son estimaciones según los porcentajes configurados, no un cálculo oficial ni asesoramiento fiscal. Las pagas extra no inflan el objetivo mensual habitual del presupuesto.
+
+Contabilidad **no importa CSV ni Excel** en esta versión. Su HTML de publicación tampoco incluye esta área ni sus datos; la publicación sigue siendo solo el panel de Mi Patrimonio.
+
+---
+
 ## ¿Y si lo hubieras metido todo en un indexado?
 
 En la pestaña **Rendimiento**, la app repite **tus mismas compras y ventas, en las mismas fechas**, pero en otra cartera, y te dice cuánto tendrías hoy:
@@ -274,7 +288,9 @@ En **«Ver más detalles»** tienes la volatilidad, el Sharpe y la peor caída d
 - **Descargar copia**: un archivo `.json` con toda tu cartera. Guárdalo en tu nube o en un USB de vez en cuando.
 - **Recuperar desde un archivo**: para pasar tu cartera a otro ordenador. En el nuevo, instala la app, ábrela y sube ahí el archivo.
 
-Tus datos están en la carpeta **`mis_datos`**, dentro de la carpeta de la app. Copiar esa carpeta también vale como copia de seguridad.
+Por defecto, los datos están en la carpeta **`mis_datos`**, dentro de la carpeta de la app. Copiar esa carpeta también vale como copia de seguridad.
+
+Contabilidad se guarda por separado en `mis_datos/contabilidad.json`; si configuraste `PATRIMONIO_DATOS`, usa esa carpeta en lugar de `mis_datos`. El documento tiene `version: 1` y no hay migración automática a versiones futuras. Antes de reemplazarlo se conservan hasta 20 copias en `copias_contabilidad/`, independientes de las copias de Patrimonio. No hay restauración de Contabilidad desde la interfaz: para recuperar una copia, cierra la app, guarda aparte el `contabilidad.json` actual y copia el `auto_*.json` elegido como `contabilidad.json` en la misma carpeta. Vuelve a abrir la app para comprobar el resultado.
 
 ---
 
@@ -329,9 +345,9 @@ Lee el mensaje de la ventana: casi siempre dice qué pasa. Lo más habitual es n
 
 ## Privacidad
 
-- Tus datos se guardan **solo en tu ordenador**, en la carpeta `mis_datos`. No hay cuentas, ni servidores, ni nadie más que los vea.
-- La app solo sale a internet para descargar precios (Morningstar, Yahoo Finance y CoinGecko) y para comprobar si hay una versión nueva en GitHub. En esas consultas no va ningún dato tuyo.
-- El servidor de la app solo escucha en tu propio ordenador (`127.0.0.1`): nadie de tu red puede entrar.
+- La cartera y Contabilidad se guardan en archivos del equipo, en `mis_datos` por defecto. No hay cuentas ni sincronización en la nube.
+- La app consulta internet para descargar precios (Morningstar, Yahoo Finance y CoinGecko) y comprobar si hay una versión nueva en GitHub. Esas consultas no incluyen tu cartera ni tus datos de Contabilidad.
+- El servidor se enlaza a `0.0.0.0`; según la red y el firewall, la interfaz puede ser accesible desde otros dispositivos de la misma red. No la expongas a internet: la app no tiene autenticación ni HTTPS.
 
 ---
 
@@ -340,6 +356,7 @@ Lee el mensaje de la ventana: casi siempre dice qué pasa. Lo más habitual es n
 - Los precios vienen de servicios **gratuitos y no oficiales**. Casi siempre van bien, pero pueden fallar o traer algún dato raro. Si una fuente no responde, la app usa el último precio guardado y te avisa.
 - Del CSV de MyInvestor solo se conoce la **plusvalía** de lo ya vendido, no la fecha de venta: tu patrimonio de hoy sale bien, pero la curva no refleja cuándo vendiste.
 - No calcula **impuestos**.
+- La nómina de Contabilidad usa tasas configurables y es solo una estimación; no sustituye una nómina oficial ni asesoramiento fiscal.
 - La versión de **Mac** no se ha podido probar en un Mac real.
 
 ---
@@ -347,7 +364,7 @@ Lee el mensaje de la ventana: casi siempre dice qué pasa. Lo más habitual es n
 ## Para curiosos: cómo está hecho
 
 - **Python + Flask** para el servidor local; el panel es HTML, CSS y JavaScript sin librerías externas (gráficos SVG propios). Sin Node.
-- Los datos están en `mis_datos/cartera.json`: productos, movimientos y valores anotados.
+- La cartera está en `mis_datos/cartera.json`. Contabilidad tiene un almacenamiento independiente y versionado en `mis_datos/contabilidad.json`, con copias en `mis_datos/copias_contabilidad/`.
 - Para arrancarlo a mano: `uv run python -m app`.
 
 ### Desarrollo con Docker
@@ -357,15 +374,16 @@ Con Docker Compose 2.22 o superior, ejecuta `docker compose watch` desde la carp
 ```
 Iniciar.bat / Iniciar.command   lanzadores de doble clic (texto plano)
 app/
-  servidor.py    la app local (Flask, solo en 127.0.0.1)
+  servidor.py    servidor Flask (enlaza a 0.0.0.0; consulta el aviso de privacidad)
   motor.py       los cálculos: series diarias, TIR, rentabilidades, comparación
+  contabilidad.py esquema, persistencia y cálculos de Contabilidad
   buscar.py      buscador de productos (Morningstar, Yahoo, CoinGecko)
   importar.py    importadores (MyInvestor, plantilla, texto de la IA)
   almacen.py     validación y guardado, con copias automáticas
   exportar.py    el panel como web estática
-  web/           el panel (index.html, app.js, graficos.js, editor.js)
+  web/           el panel (index.html, app.js, contabilidad.js, editor.js, CSS)
 demo/            la cartera de ejemplo
-mis_datos/       TUS DATOS (se crea al usarla; no se sube a ningún sitio)
+mis_datos/       TUS DATOS (cartera.json y contabilidad.json; se crea al usarla)
 ```
 
 ---

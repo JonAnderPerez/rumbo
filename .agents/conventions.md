@@ -18,13 +18,16 @@ Estas reglas describen el código actual; no se encontró un formatter/linter co
 - Los nombres frontend usan principalmente `camelCase` y claves acordes al JSON español; variables globales compartidas explícitamente en `window` (`window.DATOS`, `window.G`).
 - `editor.js` y `app.js` aíslan utilidades/estado en closures; `graficos.js` publica una API concisa en `window.G`.
 - Escapa texto interpolado en HTML cuando proceda; ejemplo actual `editor.js` define `esc()` y la usa en plantillas.
-- Los gráficos son SVG propios; el HTML contiene CSS inline y los temas se expresan mediante variables CSS y `data-tema`.
-- Conserva carga ordenada de scripts en `index.html`: `datos.js`, `graficos.js`, `app.js`, `editor.js`.
+- Los gráficos son SVG propios; `index.html` carga CSS externos y `exportar.py` los inserta en línea para el HTML autónomo. Los temas se expresan mediante variables CSS y `data-tema`.
+- Conserva carga ordenada de scripts en `index.html`: `datos.js`, `graficos.js`, `app.js`, `editor.js`, `contabilidad.js`.
+- La vista anual está aislada en `contabilidad.js` y `contabilidad.css`; sus importes/porcentajes se presentan con formato español, pero se envían al servidor como números JSON.
+- No persistir totales calculados. `contabilidad.calcula()` usa `Decimal` y sus resultados se devuelven como `resumen` desde la API; los cálculos de Patrimonio siguen en `motor.py`.
 
 ## Contratos de datos y API
 
 - La UI y el backend comparten claves/categorías españolas. Comprueba el uso de cada clave en `almacen.py`, `motor.py`, `servidor.py` y frontend antes de renombrar.
 - Respuestas de cambio usan `ok`, `errores`, `item`, `cartera` y/o `avisos`; errores de validación se devuelven con estado HTTP 400. La demo rechaza escrituras con 403.
+- Las rutas de Contabilidad usan `ok`, `errores`, `ejercicio`, `categoria` y `resumen`. `resumen` es derivado y no pertenece al esquema versionado `contabilidad.json`.
 - Importación debe conservar el flujo de vista previa/confirmación y evitar duplicados, como implementan `importar.preparar_*`, `vista_previa()` y `aplicar()`.
 - Fechas persistentes se convierten a ISO mediante `date.isoformat()`; visualización en español se formatea en UI.
 

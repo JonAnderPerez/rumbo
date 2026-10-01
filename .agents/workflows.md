@@ -2,11 +2,20 @@
 
 ## Añadir o cambiar una funcionalidad
 
-1. Localiza la capa propietaria: cálculo (`motor.py`), persistencia/validación (`almacen.py`), integración de precios (`buscar.py`), endpoint (`servidor.py`) o presentación (`app/web/`).
+1. Localiza la capa propietaria: cálculo de Patrimonio (`motor.py`), cálculo/persistencia de Contabilidad (`contabilidad.py`), persistencia de cartera (`almacen.py`), integración de precios (`buscar.py`), endpoint (`servidor.py`) o presentación (`app/web/`).
 2. Sigue un cambio completo entre UI, API, validación, almacenamiento y recálculo. No dupliques reglas de dominio en JavaScript si son necesarias para proteger los datos persistidos.
 3. Conserva mensajes en castellano y contratos JSON existentes. Para entradas del usuario, conserva errores explícitos; para importación, la vista previa antes de confirmar.
 4. Actualiza README o `.agents/` solo si el cambio altera instrucciones/arquitectura.
 5. No hay suite automatizada documentada. Haz una prueba manual con ruta `PATRIMONIO_DATOS` temporal, `PATRIMONIO_NO_ABRIR=1` y un puerto libre; arranca `uv run python -m app`, comprueba `/api/ping` y recorre el camino afectado. La descarga de precios puede requerir Internet.
+
+## Usar Contabilidad
+
+- Selecciona **Contabilidad** desde el selector del appbar; crea o elige un ejercicio. Los datos se aíslan por año y se escriben en `PATRIMONIO_DATOS/contabilidad.json`, nunca en la cartera.
+- La configuración, las categorías y los importes persistidos están definidos/validados por `contabilidad.py`. Los resúmenes de `/api/contabilidad/<año>` se calculan al responder y no deben añadirse al fichero persistente.
+- Los importes vacíos son desconocidos/no registrados; el cero es explícito. Un subtotal mensual requiere datos en ingresos, gastos y casa. «Real» y «Ahorros» no se descuentan otra vez.
+- Los guardados generan hasta 20 copias completas en `PATRIMONIO_DATOS/copias_contabilidad/`. No hay restauración desde la interfaz; con la app cerrada, la recuperación consiste en respaldar el archivo actual y reemplazarlo con una copia `auto_*.json`.
+- La nómina es una estimación basada en porcentajes configurables, no cálculo oficial ni asesoramiento fiscal. No se ofrece importación CSV/XLSX para Contabilidad.
+- El exportador incluye solo Mi Patrimonio y no debe incorporar el documento de Contabilidad ni sus datos.
 
 ## Cambiar el modelo de cartera
 
@@ -32,4 +41,5 @@ La ruta normal es CSV MyInvestor o la plantilla CSV/XLSX; el backend prepara un 
 - Compose define `rumbo`, publica `8765:8765`, monta `./mis_datos:/app/mis_datos` y fija `TZ=Europe/Madrid`. Arranque local derivado de esos archivos: `docker compose up --build`; detener con `Ctrl-C`.
 - Antes de desplegar, mantener `mis_datos` en un volumen persistente respaldado. El servidor actual se enlaza a `0.0.0.0`, por lo que no exponerlo a Internet sin resolver autenticación, HTTPS y control de acceso (`POR CONFIRMAR`).
 - README describe una vía distinta para publicar un panel de solo lectura: exportar desde la app a HTML (con importes opcionalmente ocultos) y subir el archivo a un servicio estático. Confirmar el destino y la privacidad antes de compartir.
+- El HTML autónomo de exportación solo contiene Mi Patrimonio; no lleva el panel ni los datos de Contabilidad.
 - No se encontró CI/CD ni proceso automatizado de release/deploy (`POR CONFIRMAR`).
