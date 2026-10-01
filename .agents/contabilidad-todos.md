@@ -17,9 +17,9 @@ Crear en Rumbo un espacio de **Contabilidad**, separado de «Mi Patrimonio» y a
 ### 1. Definir datos, fórmulas y persistencia
 
 - [x] Definir en esta hoja de ruta el contrato versionado por ejercicio, sus secciones, categorías, reglas y cálculos derivados.
-- [ ] Guardar Contabilidad en un fichero independiente; no añadir campos a `cartera.json` ni cambiar `motor.py`.
-- [ ] Añadir validación explícita para año, categoría, mes, importes, porcentajes y campos salariales; rechazar entradas inválidas con errores legibles.
-- [ ] Definir guardado atómico y copias previas siguiendo las convenciones del almacenamiento existente, sin leer datos de `mis_datos/`.
+- [x] Guardar Contabilidad en un fichero independiente; no añadir campos a `cartera.json` ni cambiar `motor.py`.
+- [x] Añadir validación explícita para año, categoría, mes, importes, porcentajes y campos salariales; rechazar entradas inválidas con errores legibles.
+- [x] Definir guardado atómico y copias previas siguiendo las convenciones del almacenamiento existente, sin leer datos de `mis_datos/`.
 - **Aceptación:** la carga/guardado de un ejercicio de ejemplo no modifica la cartera ni interfiere con sus copias; los importes soportan cero, vacío y valores negativos de ajuste/devolución.
 
 #### Contrato canónico de datos (v1)

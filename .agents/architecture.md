@@ -13,6 +13,7 @@ El almacenamiento principal es un JSON de cartera (`mis_datos/cartera.json`). Cu
 | `app/__main__.py` | Punto de entrada `python -m app`. |
 | `app/servidor.py` | Flask, rutas de interfaz/API, selección demo/propia, lock de escritura/cálculo, exportación y arranque. |
 | `app/almacen.py` | Esquema/validación de productos, movimientos y valoraciones; JSON atómico y copias limitadas a 20. |
+| `app/contabilidad.py` | Esquema versionado por ejercicio, validación y persistencia independiente de Contabilidad con copias limitadas a 20. |
 | `app/motor.py` | Descarga/lectura de precios, series históricas, valoración y métricas (TIR, rentabilidad, comparación). |
 | `app/buscar.py` | Búsqueda por identificador/nombre y comprobación de precios de candidatos. |
 | `app/importar.py` | Lectura/preparación/vista previa/aplicación de CSV MyInvestor, tabla genérica y texto CSV. |
@@ -43,6 +44,8 @@ El almacenamiento principal es un JSON de cartera (`mis_datos/cartera.json`). Cu
 ## Datos persistentes
 
 `almacen.CARTERA_VACIA` define un ejemplo del objeto: `version`, `titular`, listas `productos`, `movimientos`, `valoraciones`, `comparador`, `hitos` y `objetivo`. El archivo demo aporta un ejemplo completo y puede evolucionar independientemente del archivo privado.
+
+Contabilidad tiene un contrato independiente en `app/contabilidad.py`: el fichero `contabilidad.json` contiene un mapa versionado de ejercicios y se guarda en la carpeta `PATRIMONIO_DATOS` (por defecto `mis_datos`). Sus copias automáticas se guardan en `copias_contabilidad/`, separadas de las copias de Patrimonio, con un máximo de 20. La lectura devuelve un documento vacío si aún no existe el fichero; los guardados validan todo el documento y usan reemplazo atómico. Las versiones desconocidas o los datos inválidos se rechazan; no hay migrador.
 
 `servidor.py` también usa `estado.json`, `calculado_<modo>.json`, `historico.json`, caché de precios y `copias/` dentro de la carpeta de datos. El contenido exacto y las claves internas de caché no son contrato público (`POR CONFIRMAR` antes de depender de ellas).
 
