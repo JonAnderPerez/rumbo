@@ -584,6 +584,50 @@ table.dt td.nota{max-width:220px;overflow:hidden;text-overflow:ellipsis;text-ali
 .marca .marcaSep{width:1px;height:15px;background:var(--borde)}
 .marca #marcaTexto{font-weight:500;color:var(--tinta2);font-size:13.5px}
 @media(max-width:720px){.marca .marcaSep,.marca #marcaTexto{display:none}}
+@media(max-width:640px){
+  .tabs{
+    flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;touch-action:pan-x;scrollbar-width:thin;
+  }
+  .tabs::-webkit-scrollbar{display:block;height:4px}
+  .tabs::-webkit-scrollbar-thumb{background:var(--tinta3);border-radius:99px}
+  .tabs button{flex:0 0 auto}
+  .evolucion > header,#seccionComparar > header{
+    display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:8px;
+  }
+  .evolucion > header .sep,#seccionComparar > header .sp{display:none}
+  .evolucion > header .segm,#compRef{
+    display:flex;width:100%;max-width:100%;min-width:0;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+  }
+  .evolucion > header .segm button,#compRef button{flex:0 0 auto}
+  .envGraf{min-width:0}
+  .hCifra{font-size:clamp(32px,11vw,44px)}
+  .expo{grid-template-columns:minmax(0,1fr);gap:18px}
+  .tablaEnv{-webkit-overflow-scrolling:touch}
+  .tarjeta > header .segm,.edBarra > .segm{
+    display:flex;width:100%;max-width:100%;min-width:0;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+  }
+  .tarjeta > header .segm::-webkit-scrollbar,.edBarra > .segm::-webkit-scrollbar{height:4px}
+  .tarjeta > header .segm::-webkit-scrollbar-thumb,.edBarra > .segm::-webkit-scrollbar-thumb{
+    background:var(--tinta3);border-radius:99px;
+  }
+  .tarjeta > header .segm button,.edBarra > .segm button{flex:0 0 auto}
+  .edBarra > .sp{display:none}
+  .banner span{min-width:0}
+  .pildoras,.hitos{-webkit-overflow-scrolling:touch}
+  .imAcc{flex-wrap:wrap}
+  .imAcc > .sp{display:none}
+  .imAcc .btn{
+    flex:1 1 130px;max-width:100%;height:auto;min-height:40px;
+    padding:8px 12px;white-space:normal;text-align:center;
+  }
+  .mForm > footer{flex-wrap:wrap}
+  .mForm > footer .btn{
+    flex:1 1 110px;height:auto;min-height:40px;white-space:normal;
+  }
+}
 </style>
 </head>
 <body>
@@ -634,7 +678,7 @@ table.dt td.nota{max-width:220px;overflow:hidden;text-overflow:ellipsis;text-ali
   <p class="kpisNota subt" id="kpisNota"></p>
   <div class="kpis" id="kpis"></div>
 
-  <section class="tarjeta">
+  <section class="tarjeta evolucion">
     <header>
       <h2>Evolución del patrimonio</h2>
       <span class="subt" id="evolNota"></span>

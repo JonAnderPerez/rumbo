@@ -25,6 +25,10 @@
     raiz.dataset.tema = raiz.dataset.tema === "claro" ? "oscuro" : "claro";
     recuerda.guarda("patrimonio.tema", raiz.dataset.tema);
   };
+  const muestraTab = tab => {
+    const boton = [...document.querySelectorAll("#tabs button")].find(b => b.dataset.tab === tab);
+    if (boton) boton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+  };
 
   if (!D) {
     $("#btnTema").onclick = cambiaTema;
@@ -38,8 +42,10 @@
       b.onclick = () => {
         document.querySelectorAll("#tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
         document.querySelectorAll(".panel").forEach(p => { p.hidden = p.id !== "tab-" + b.dataset.tab; });
+        muestraTab(b.dataset.tab);
       };
     });
+    muestraTab("datos");
     return;
   }
 
@@ -1075,6 +1081,7 @@
     document.querySelectorAll("#tabs button").forEach(b =>
       b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     document.querySelectorAll(".panel").forEach(p => { p.hidden = p.id !== "tab-" + tab; });
+    muestraTab(tab);
     recuerda.guarda("patrimonio.tab", tab);
     pintarTab();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1146,6 +1153,7 @@
       b.setAttribute("aria-selected", String(b.dataset.tab === estado.tab)));
     document.querySelectorAll(".panel").forEach(p => { p.hidden = p.id !== "tab-" + estado.tab; });
   }
+  muestraTab(estado.tab);
 
   try {
     pintar();
