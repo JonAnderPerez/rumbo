@@ -1,14 +1,14 @@
 body[data-area-activa="contabilidad"] #tabs,
 body[data-area-activa="contabilidad"] #metaFecha,
 body[data-area-activa="contabilidad"] #btnPrecios{display:none}
+body[data-area-activa="contabilidad"] #ctGuardar{display:inline-flex}
+#ctGuardar{display:none}
 .ct-campo{font-size:12.5px;font-weight:600;color:var(--tinta2)}
 .ct-crear input,.ct-editor input:not([type=checkbox]){
   min-width:0;background:var(--sup2);color:var(--tinta);border:1px solid var(--borde);
   border-radius:8px;padding:8px 10px;font:inherit;font-size:13px
 }
-.ct-barra{margin-top:14px}
-.ct-encabezado{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.ct-encabezado h1{margin:0;font-size:20px;font-weight:680}
+.ct-estado-lector:not(:empty){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .ct-tabs{
   display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;
   margin:0 0 14px;border-bottom:1px solid var(--borde)
@@ -124,8 +124,6 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
   .ct-editor{gap:14px;margin-top:14px}
   .ct-editor .tarjeta{padding:15px 13px}
   .ct-tabs{margin-bottom:10px;-webkit-overflow-scrolling:touch}
-  .ct-encabezado{align-items:flex-start}
-  .ct-encabezado .btn{flex:0 0 auto;padding:8px 10px;font-size:12px}
   .ct-importar-form{grid-template-columns:minmax(0,1fr)}
   .ct-importar-form input,.ct-importar-form .btn{width:100%}
   .ct-importar-vista .btn{width:100%;justify-content:center}
