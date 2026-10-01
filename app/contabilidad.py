@@ -189,6 +189,21 @@ def valida_documento(documento):
 def _valida_ejercicio(clave, ejercicio, ruta, errores):
     _campos(ejercicio, _CAMPOS_EJERCICIO, ruta, errores)
     resultado = copy.deepcopy(ejercicio)
+    if not isinstance(resultado.get("nomina"), dict):
+        resultado["nomina"] = {}
+    if not isinstance(resultado.get("presupuesto"), dict):
+        resultado["presupuesto"] = {}
+    if not isinstance(resultado["presupuesto"].get("reglas"), list):
+        resultado["presupuesto"]["reglas"] = []
+    if not isinstance(resultado.get("secciones"), dict):
+        resultado["secciones"] = {}
+    for seccion in SECCIONES:
+        bloque = resultado["secciones"].get(seccion)
+        if not isinstance(bloque, dict):
+            bloque = {}
+            resultado["secciones"][seccion] = bloque
+        if not isinstance(bloque.get("categorias"), list):
+            bloque["categorias"] = []
 
     anio = ejercicio.get("anio")
     if isinstance(anio, bool) or not isinstance(anio, int) or not 1950 <= anio <= 9999:

@@ -160,10 +160,11 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 
 ### 3. Añadir almacenamiento y API de Contabilidad
 
-- [ ] Implementar un módulo de dominio/almacenamiento propio para años, configuración anual, reglas, categorías e importes mensuales.
-- [ ] Exponer endpoints independientes para consultar ejercicios, crear uno, consultar un ejercicio y guardar/eliminar datos o categorías.
-- [ ] Aplicar validación en servidor y respuestas de error coherentes con el resto de la API.
-- [ ] No persistir silenciosamente sobre la demo de patrimonio ni aceptar escrituras malformadas.
+- [x] Implementar un módulo de dominio/almacenamiento propio para años, configuración anual, reglas, categorías e importes mensuales.
+- [x] Exponer endpoints independientes para consultar ejercicios, crear uno, consultar un ejercicio y guardar/eliminar datos o categorías.
+- [x] Aplicar validación en servidor y respuestas de error coherentes con el resto de la API.
+- [x] No persistir silenciosamente sobre la demo de patrimonio ni aceptar escrituras malformadas.
+- **API implementada:** `GET/POST /api/contabilidad`, `GET/PUT/DELETE /api/contabilidad/<año>`, `POST /api/contabilidad/<año>/categorias/<seccion>` y `PATCH /api/contabilidad/<año>/categorias/<seccion>/<id>`. El PUT recibe el ejercicio completo; la eliminación se limita al ejercicio, no a categorías.
 - **Aceptación:** se puede crear, leer, editar y borrar un ejercicio con almacenamiento temporal y la API de cartera responde igual que antes.
 
 ### 4. Añadir selector de áreas al appbar

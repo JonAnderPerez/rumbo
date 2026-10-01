@@ -21,7 +21,7 @@ import webbrowser
 from flask import Flask, Response, jsonify, request, send_from_directory
 from werkzeug.serving import make_server
 
-from . import almacen, buscar, exportar, importar, motor, plantilla
+from . import almacen, buscar, contabilidad, exportar, importar, motor, plantilla
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(RAIZ, "app", "web")
@@ -128,6 +128,172 @@ def api_actualizar():
 def api_cartera():
     return jsonify(modo=modo(), cartera=cartera(), tipos=motor.TIPOS, fuentes=motor.FUENTES,
                    tiposMovimiento=almacen.TIPOS_MOV)
+
+
+def error_contabilidad(error, estado=400):
+    return jsonify(ok=False, errores=error.errores), estado
+
+
+def datos_contabilidad():
+    datos = request.get_json(silent=True)
+    if not isinstance(datos, dict):
+        raise contabilidad.ErrorValidacion(["Envía un objeto JSON válido."])
+    return datos
+
+
+def actualiza_fecha_contabilidad(ejercicio):
+    ejercicio["actualizado"] = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+@app.get("/api/contabilidad")
+def api_contabilidad_ejercicios():
+    try:
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(ok=True, anios=sorted(
+        (int(anio) for anio in documento["ejercicios"]), reverse=True,
+    ))
+
+
+@app.post("/api/contabilidad")
+def api_contabilidad_crear():
+    try:
+        datos = datos_contabilidad()
+        if set(datos) != {"anio"}:
+            raise contabilidad.ErrorValidacion(["Envía únicamente el campo «anio»."])
+        ejercicio = contabilidad.crear_ejercicio(datos["anio"])
+        anio = str(ejercicio["anio"])
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+            if anio in documento["ejercicios"]:
+                return jsonify(ok=False, errores=["Ese ejercicio ya existe."]), 409
+            documento["ejercicios"][anio] = ejercicio
+            contabilidad.guarda(DATOS, documento)
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(ok=True, ejercicio=ejercicio), 201
+
+
+@app.get("/api/contabilidad/<int:anio>")
+def api_contabilidad_ejercicio(anio):
+    try:
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    ejercicio = documento["ejercicios"].get(str(anio))
+    if ejercicio is None:
+        return jsonify(ok=False, errores=["Ese ejercicio no existe."]), 404
+    return jsonify(ok=True, ejercicio=ejercicio)
+
+
+@app.put("/api/contabilidad/<int:anio>")
+def api_contabilidad_guardar(anio):
+    try:
+        ejercicio = datos_contabilidad()
+        if isinstance(ejercicio.get("anio"), bool) or ejercicio.get("anio") != anio:
+            raise contabilidad.ErrorValidacion([
+                "El campo «anio» debe coincidir con el año de la dirección.",
+            ])
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+            anterior = documento["ejercicios"].get(str(anio))
+            if anterior is None:
+                return jsonify(ok=False, errores=["Ese ejercicio no existe."]), 404
+            ejercicio["creado"] = anterior["creado"]
+            actualiza_fecha_contabilidad(ejercicio)
+            documento["ejercicios"][str(anio)] = ejercicio
+            guardado = contabilidad.guarda(DATOS, documento)["ejercicios"][str(anio)]
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(ok=True, ejercicio=guardado)
+
+
+@app.delete("/api/contabilidad/<int:anio>")
+def api_contabilidad_borrar(anio):
+    try:
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+            if documento["ejercicios"].pop(str(anio), None) is None:
+                return jsonify(ok=False, errores=["Ese ejercicio no existe."]), 404
+            contabilidad.guarda(DATOS, documento)
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(ok=True)
+
+
+@app.post("/api/contabilidad/<int:anio>/categorias/<seccion>")
+def api_contabilidad_crear_categoria(anio, seccion):
+    if seccion not in contabilidad.SECCIONES:
+        return jsonify(ok=False, errores=["Esa sección de Contabilidad no existe."]), 404
+    try:
+        datos = datos_contabilidad()
+        if set(datos) != {"id", "nombre"}:
+            raise contabilidad.ErrorValidacion([
+                "Envía únicamente los campos «id» y «nombre».",
+            ])
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+            ejercicio = documento["ejercicios"].get(str(anio))
+            if ejercicio is None:
+                return jsonify(ok=False, errores=["Ese ejercicio no existe."]), 404
+            categoria = {
+                "id": datos["id"],
+                "nombre": datos["nombre"],
+                "tipo": "manual",
+                "afecta_total": True,
+                "valores": [None] * 12,
+            }
+            ejercicio["secciones"][seccion]["categorias"].append(categoria)
+            actualiza_fecha_contabilidad(ejercicio)
+            guardado = contabilidad.guarda(DATOS, documento)["ejercicios"][str(anio)]
+            categoria = next(
+                fila for fila in guardado["secciones"][seccion]["categorias"]
+                if fila["id"] == datos["id"]
+            )
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(ok=True, categoria=categoria), 201
+
+
+@app.patch("/api/contabilidad/<int:anio>/categorias/<seccion>/<categoria_id>")
+def api_contabilidad_actualizar_categoria(anio, seccion, categoria_id):
+    if seccion not in contabilidad.SECCIONES:
+        return jsonify(ok=False, errores=["Esa sección de Contabilidad no existe."]), 404
+    try:
+        datos = datos_contabilidad()
+        if not datos or set(datos) - {"nombre", "valores"}:
+            raise contabilidad.ErrorValidacion([
+                "Envía al menos «nombre» o «valores», sin otros campos.",
+            ])
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+            ejercicio = documento["ejercicios"].get(str(anio))
+            if ejercicio is None:
+                return jsonify(ok=False, errores=["Ese ejercicio no existe."]), 404
+            categoria = next(
+                (fila for fila in ejercicio["secciones"][seccion]["categorias"]
+                 if fila["id"] == categoria_id),
+                None,
+            )
+            if categoria is None:
+                return jsonify(ok=False, errores=["Esa categoría no existe."]), 404
+            if "valores" in datos and categoria["tipo"] != "manual":
+                raise contabilidad.ErrorValidacion([
+                    "Las categorías de nómina se calculan y no admiten importes manuales.",
+                ])
+            categoria.update(datos)
+            actualiza_fecha_contabilidad(ejercicio)
+            guardado = contabilidad.guarda(DATOS, documento)["ejercicios"][str(anio)]
+            categoria = next(
+                fila for fila in guardado["secciones"][seccion]["categorias"]
+                if fila["id"] == categoria_id
+            )
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(ok=True, categoria=categoria)
 
 
 @app.get("/api/buscar")
