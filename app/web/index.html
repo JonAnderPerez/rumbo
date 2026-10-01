@@ -11,12 +11,21 @@
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="componentes.css">
 </head>
-<body>
+<body data-area-activa="patrimonio">
 
 <div class="top">
   <div class="env">
     <div class="topFila">
-      <div class="marca"><img class="logoIcono" src="icono-64.png" alt="" width="24" height="24"><span class="nombreApp">Rumbo</span><span class="marcaSep"></span><span id="marcaTexto">Mi patrimonio</span></div>
+      <div class="marca">
+        <img class="logoIcono" src="icono-64.png" alt="" width="24" height="24">
+        <span class="nombreApp">Rumbo</span>
+        <span class="marcaSep" aria-hidden="true"></span>
+        <select class="selectorArea" id="selectorArea" aria-label="Área de trabajo"
+                aria-controls="areaPatrimonio areaContabilidad">
+          <option value="patrimonio">Mi Patrimonio</option>
+          <option value="contabilidad">Contabilidad</option>
+        </select>
+      </div>
       <div class="sep"></div>
       <span class="meta" id="metaFecha"></span>
       <button class="btn" id="btnPrecios" title="Descarga los precios de hoy de cada producto">↻ Actualizar precios</button>
@@ -33,7 +42,7 @@
   </div>
 </div>
 
-<div class="env">
+<div class="env" id="areaPatrimonio" data-area-panel="patrimonio">
 
 <div class="banner" id="bannerVersion" hidden><span id="bannerVersionTexto"></span></div>
 <div class="banner" id="bannerDemo" hidden>
@@ -264,6 +273,14 @@
   <div class="avisos" id="avisos"></div>
   <footer class="pie" id="pie"></footer>
 </div>
+
+<main class="env areaContabilidad" id="areaContabilidad" data-area-panel="contabilidad"
+      aria-labelledby="areaContabilidadTitulo" hidden>
+  <section class="tarjeta">
+    <header><h1 id="areaContabilidadTitulo">Contabilidad</h1></header>
+    <p class="subt">La vista anual editable de Contabilidad estará disponible aquí.</p>
+  </section>
+</main>
 
 <dialog class="modal" id="modal"></dialog>
 

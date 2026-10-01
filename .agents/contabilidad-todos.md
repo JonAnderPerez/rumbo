@@ -169,10 +169,11 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 
 ### 4. Añadir selector de áreas al appbar
 
-- [ ] Hacer seleccionable el título junto al logo Rumbo para alternar entre «Mi Patrimonio» y «Contabilidad».
-- [ ] Conservar el diseño del appbar; indicar el área activa y permitir operar el selector con teclado/lector de pantalla.
-- [ ] Adaptar el selector a móvil, donde actualmente el texto de marca se oculta en pantallas estrechas.
-- [ ] Mantener aislado el estado de navegación de cada área y restaurar el área seleccionada al recargar.
+- [x] Hacer seleccionable el título junto al logo Rumbo para alternar entre «Mi Patrimonio» y «Contabilidad».
+- [x] Conservar el diseño del appbar; indicar el área activa y permitir operar el selector con teclado/lector de pantalla.
+- [x] Adaptar el selector a móvil, donde actualmente el texto de marca se oculta en pantallas estrechas.
+- [x] Mantener aislado el estado de navegación de cada área y restaurar el área seleccionada al recargar.
+- [x] Conservar la exportación estática centrada en Mi Patrimonio, sin selector ni contenido de Contabilidad.
 - **Aceptación:** cambiar de área no pierde cambios pendientes ni cambia los datos o la pestaña activa de la otra área.
 
 ### 5. Crear vista anual y edición de categorías

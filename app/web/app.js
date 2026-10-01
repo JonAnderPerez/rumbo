@@ -13,6 +13,42 @@
     guarda(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* da igual */ } },
   };
 
+  const areas = ["patrimonio", "contabilidad"];
+  const areaGuardada = recuerda.lee("rumbo.area");
+  let areaActiva = !window.ESTATICO && areas.includes(areaGuardada)
+    ? areaGuardada
+    : "patrimonio";
+  const selectorArea = $("#selectorArea");
+  function muestraArea(area) {
+    areaActiva = area;
+    document.body.dataset.areaActiva = area;
+    if (selectorArea) selectorArea.value = area;
+    document.querySelectorAll("[data-area-panel]").forEach(panel => {
+      panel.hidden = panel.dataset.areaPanel !== area;
+    });
+    recuerda.guarda("rumbo.area", area);
+    document.title = "Rumbo · " + (area === "contabilidad"
+      ? "Contabilidad"
+      : (D && D.titular || "Mi Patrimonio"));
+  }
+  if (selectorArea) selectorArea.onchange = () => {
+    const nuevaArea = selectorArea.value;
+    if (!areas.includes(nuevaArea) || nuevaArea === areaActiva) return;
+    if ($("#modal").open) {
+      alert("Guarda o cierra el formulario abierto antes de cambiar de área.");
+      selectorArea.value = areaActiva;
+      return;
+    }
+    if (areaActiva === "patrimonio" && nuevaArea === "contabilidad" && window.EDITOR_SUCIO) {
+      recuerda.guarda("rumbo.area", nuevaArea);
+      location.reload();
+      return;
+    }
+    muestraArea(nuevaArea);
+    if (nuevaArea === "patrimonio" && D) pintar();
+  };
+  muestraArea(areaActiva);
+
   // ?tab=rendimiento&tema=claro abre directamente esa pestaña con ese tema.
   const qs = new URLSearchParams(location.search);
   if (qs.get("tab")) recuerda.guarda("patrimonio.tab", qs.get("tab"));
@@ -1062,7 +1098,7 @@
     return null;
   }
   async function actualizaVivo() {
-    if (!D.vivo) return;
+    if (areaActiva !== "patrimonio" || !D.vivo) return;
     const v = await traeBtc();
     if (!v) return;
     estado.btcVivo = v;
@@ -1099,11 +1135,12 @@
   function pintar() { pintaComun(); pintarTab(); }
 
   /* ---------------------------------------------- arranque */
-  document.title = "Rumbo · " + (D.titular || "Mi patrimonio");
-  $("#marcaTexto").textContent = D.titular || "Mi patrimonio";
+  document.title = areaActiva === "contabilidad"
+    ? "Rumbo · Contabilidad"
+    : "Rumbo · " + (D.titular || "Mi patrimonio");
   $("#metaFecha").textContent = "Datos a " + G.fmtFecha(D.fechaExtracto);
 
-  $("#btnTema").onclick = () => { cambiaTema(); pintar(); };
+  $("#btnTema").onclick = () => { cambiaTema(); if (areaActiva === "patrimonio") pintar(); };
   if ($("#btnPrecios")) $("#btnPrecios").onclick = async () => {
     const b = $("#btnPrecios");
     b.disabled = true;
@@ -1133,6 +1170,7 @@
     // cualquier boton, que es justo cuando los quieres.
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (areaActiva !== "patrimonio") return;
     if (e.key === "Escape" && filtrando()) { estado.ocultos.clear(); pintaPatrimonio(); }
     if (e.key === "l" && !e.metaKey && !e.ctrlKey && estado.tab === "patrimonio") {
       estado.ocultos = filtrando() ? new Set() : new Set(idsCorto());
@@ -1144,7 +1182,10 @@
   });
 
   let t = null;
-  window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(pintarTab, 140); });
+  window.addEventListener("resize", () => {
+    clearTimeout(t);
+    t = setTimeout(() => { if (areaActiva === "patrimonio") pintarTab(); }, 140);
+  });
 
   const tabGuardada = recuerda.lee("patrimonio.tab");
   if (tabGuardada && document.getElementById("tab-" + tabGuardada)) {
@@ -1155,17 +1196,19 @@
   }
   muestraTab(estado.tab);
 
-  try {
-    pintar();
-  } catch (e) {
-    console.error(e);
-    document.querySelector(".env").insertAdjacentHTML("afterbegin",
-      '<div class="av" style="margin:20px 0"><span>⚠</span><span><b>Algo ha fallado al pintar el panel.</b> ' +
-      String(e && e.message || e) + '<br>Cierra la app y vuelve a abrirla con «Iniciar»; si sigue igual, pulsa F12 y mira la consola del navegador.</span></div>');
+  if (areaActiva === "patrimonio") {
+    try {
+      pintar();
+    } catch (e) {
+      console.error(e);
+      document.querySelector(".env").insertAdjacentHTML("afterbegin",
+        '<div class="av" style="margin:20px 0"><span>⚠</span><span><b>Algo ha fallado al pintar el panel.</b> ' +
+        String(e && e.message || e) + '<br>Cierra la app y vuelve a abrirla con «Iniciar»; si sigue igual, pulsa F12 y mira la consola del navegador.</span></div>');
+    }
   }
   // ?ir=seccionComparar pone esa sección la primera de su pestaña (para capturas y enlaces).
   const irA_ = qs.get("ir") && document.getElementById(qs.get("ir"));
-  if (irA_) {
+  if (irA_ && areaActiva === "patrimonio") {
     irA_.parentNode.prepend(irA_);
     irA_.style.marginTop = "24px";
     pintarTab();

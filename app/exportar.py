@@ -91,6 +91,20 @@ def pagina(web, datos, ocultar=False, titulo="Mi patrimonio"):
             raise RuntimeError(f"No encuentro la hoja de estilos {hoja} en index.html.")
         html = html.replace(enlace, f"<style>\n{lee(hoja)}\n</style>")
 
+    # El archivo exportado sigue siendo un panel autónomo de Mi Patrimonio.
+    html = re.sub(
+        r'<select class="selectorArea".*?</select>',
+        '<span class="textoArea">Mi Patrimonio</span>',
+        html,
+        flags=re.S,
+    )
+    html = re.sub(
+        r'<main class="env areaContabilidad".*?</main>',
+        "",
+        html,
+        flags=re.S,
+    )
+
     # Fuera lo que solo tiene sentido dentro de la app.
     html = re.sub(r'\s*<button class="btn" id="btnPrecios".*?</button>', "", html, flags=re.S)
     html = re.sub(r'\s*<button data-tab="datos".*?</button>', "", html, flags=re.S)
