@@ -1,18 +1,19 @@
 body[data-area-activa="contabilidad"] #tabs,
 body[data-area-activa="contabilidad"] #metaFecha,
 body[data-area-activa="contabilidad"] #btnPrecios{display:none}
-.ct-controles{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .ct-campo{font-size:12.5px;font-weight:600;color:var(--tinta2)}
-.ct-controles select,.ct-crear input,.ct-editor input:not([type=checkbox]){
+.ct-crear input,.ct-editor input:not([type=checkbox]){
   min-width:0;background:var(--sup2);color:var(--tinta);border:1px solid var(--borde);
   border-radius:8px;padding:8px 10px;font:inherit;font-size:13px
 }
-.ct-controles select{min-width:110px}
 .ct-barra{margin-top:14px}
+.ct-encabezado{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ct-encabezado h1{margin:0;font-size:20px;font-weight:680}
 .ct-tabs{
   display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;
   margin:0 0 14px;border-bottom:1px solid var(--borde)
 }
+.ct-tabs-anios{margin-top:14px}
 .ct-tabs::-webkit-scrollbar{display:none}
 .ct-tabs[hidden]{display:none}
 .ct-tabs button{
@@ -29,12 +30,15 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 .ct-panel[hidden]{display:none}
 .ct-panel>.tarjeta+.tarjeta{margin-top:0}
 .ct-crear{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ct-nuevo-panel .ct-crear{margin-top:4px}
+.ct-comparativas-graficos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:12px}
+.ct-comparativas-graficos .ct-grafico-grupo{margin:0}
+.ct-comparativas .ct-nota{margin:0 0 12px}
+.ct-tabla-comparativas{margin-top:14px}
+.ct-tabla-comparativas table{min-width:760px}
 .ct-estado{min-height:1.2em;margin:8px 0 0;color:var(--tinta3);font-size:12.5px}
 .ct-estado:empty{display:none}
 .ct-aviso{margin:12px 0}
-.ct-vacio{margin-top:16px}
-.ct-vacio h2{font-size:16px}
-.ct-vacio p{margin-bottom:0}
 .ct-importar{margin-top:0}
 .ct-importar-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin:14px 0}
 .ct-importar-form label,.ct-importar-form textarea{grid-column:1/-1}
@@ -67,7 +71,7 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 .ct-grid .ct-total th,.ct-grid .ct-total td{background:var(--sup2);font-weight:700}
 .ct-grid .ct-total th{position:sticky;left:0;text-align:left}
 .ct-grid .ct-total td{border-top:1px solid var(--eje)}
-.ct-grid td input:focus,.ct-controles input:focus,.ct-controles select:focus,.ct-grid input:focus{outline:2px solid var(--s1);outline-offset:1px}
+.ct-grid td input:focus,.ct-crear input:focus,.ct-grid input:focus{outline:2px solid var(--s1);outline-offset:1px}
 .ct-nomina input:focus,.ct-regla input:focus,.ct-anadir input:focus{outline:2px solid var(--s1);outline-offset:1px}
 .ct-nomina{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px}
 .ct-nomina label{display:flex;flex-direction:column;gap:6px;color:var(--tinta2);font-size:12px;font-weight:600}
@@ -120,16 +124,14 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
   .ct-editor{gap:14px;margin-top:14px}
   .ct-editor .tarjeta{padding:15px 13px}
   .ct-tabs{margin-bottom:10px;-webkit-overflow-scrolling:touch}
-  .ct-controles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);align-items:end}
-  .ct-controles>.sep{display:none}
-  .ct-controles select{width:100%;min-width:0}
+  .ct-encabezado{align-items:flex-start}
+  .ct-encabezado .btn{flex:0 0 auto;padding:8px 10px;font-size:12px}
   .ct-importar-form{grid-template-columns:minmax(0,1fr)}
   .ct-importar-form input,.ct-importar-form .btn{width:100%}
   .ct-importar-vista .btn{width:100%;justify-content:center}
-  .ct-crear{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;width:100%}
+  .ct-crear{display:grid;grid-template-columns:minmax(0,1fr) auto;width:100%}
   .ct-crear .ct-campo{grid-column:1/-1}
   .ct-crear input{width:100%;min-width:0}
-  .ct-controles>#ctGuardar{grid-column:1/-1;width:100%;justify-content:center}
   .ct-anadir{display:grid;grid-template-columns:minmax(0,1fr)}
   .ct-anadir input{width:100%;min-width:0}
   .ct-anadir .btn{justify-content:center}

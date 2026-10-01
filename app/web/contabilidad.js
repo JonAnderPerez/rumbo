@@ -29,12 +29,17 @@
     desempleo: "Desempleo",
     formacion_profesional: "Formación profesional",
   };
-  const estado = { anios: [], ejercicio: null, resumen: null, guardando: false, pestana: "resumen" };
-  const selector = $("#ctAnio");
+  const estado = {
+    anios: [], ejercicio: null, resumen: null, guardando: false,
+    pestana: "resumen", vista: "comparativas", resumenesAnuales: new Map(),
+  };
   const editor = $("#ctEditor");
+  const contenedorAnioTabs = $("#ctAnioTabs");
   const contenedorPestanas = $("#ctTabs");
   const pestanas = [...contenedorPestanas.querySelectorAll("[data-ct-tab]")];
   const panelAyuda = $("#ctPanel-ayuda");
+  const panelComparativas = $("#ctComparativas");
+  const panelNuevo = $("#ctPanel-nuevo");
   const botonGuardar = $("#ctGuardar");
   const aviso = $("#ctAviso");
   const mensaje = $("#ctEstado");
@@ -75,8 +80,8 @@
     });
     const esAyuda = id === "ayuda";
     panelAyuda.hidden = !esAyuda;
-    editor.hidden = esAyuda || !estado.ejercicio;
-    $("#ctVacio").hidden = estado.anios.length > 0 || esAyuda;
+    editor.hidden = estado.vista !== "ejercicio" || esAyuda || !estado.ejercicio;
+    contenedorPestanas.hidden = estado.vista !== "ejercicio";
     programaGraficos();
   }
 
@@ -130,7 +135,6 @@
   }
 
   function bloqueaEdicion(bloqueada) {
-    selector.disabled = bloqueada || !estado.anios.length;
     $("#ctCrearForm").querySelectorAll("input, button")
       .forEach(campo => { campo.disabled = bloqueada; });
     editor.querySelectorAll("input, button")
@@ -411,39 +415,123 @@
   }
 
   function programaGraficos() {
-    requestAnimationFrame(dibujaGraficos);
+    requestAnimationFrame(() => {
+      dibujaGraficos();
+      dibujaComparativas();
+    });
   }
 
   function pintaSelector() {
-    selector.innerHTML = estado.anios.length
-      ? estado.anios.map(anio => `<option value="${anio}"${estado.ejercicio &&
-        estado.ejercicio.anio === anio ? " selected" : ""}>${anio}</option>`).join("")
-      : '<option value="">Sin ejercicios</option>';
-    selector.disabled = !estado.anios.length;
-    $("#ctVacio").hidden = estado.anios.length > 0 || estado.pestana === "ayuda";
-    editor.hidden = !estado.ejercicio || estado.pestana === "ayuda";
-    contenedorPestanas.hidden = false;
-    botonGuardar.disabled = !estado.ejercicio || !window.CONTABILIDAD_SUCIO;
+    const conservarFoco = contenedorAnioTabs.contains(document.activeElement);
+    const activa = estado.vista === "ejercicio" ? String(estado.ejercicio && estado.ejercicio.anio) : estado.vista;
+    contenedorAnioTabs.innerHTML = [
+      `<button class="ct-tab" id="ctTab-comparativas" type="button" role="tab"
+        aria-selected="${estado.vista === "comparativas"}" aria-controls="ctComparativas"
+        tabindex="${estado.vista === "comparativas" ? "0" : "-1"}" data-ct-view="comparativas">Comparativas</button>`,
+      ...estado.anios.map(anio => `<button class="ct-tab" id="ctTab-anio-${anio}" type="button" role="tab"
+        aria-selected="${activa === String(anio)}" aria-controls="ctEditor"
+        tabindex="${activa === String(anio) ? "0" : "-1"}" data-ct-year="${anio}">${anio}</button>`),
+      `<button class="ct-tab" id="ctTab-anadir" type="button" role="tab"
+        aria-selected="${estado.vista === "nuevo"}" aria-controls="ctPanel-nuevo"
+        tabindex="${estado.vista === "nuevo" ? "0" : "-1"}" data-ct-view="nuevo">+ Añadir año</button>`,
+    ].join("");
+    if (conservarFoco) contenedorAnioTabs.querySelector('[aria-selected="true"]').focus();
+    panelComparativas.hidden = estado.vista !== "comparativas";
+    panelNuevo.hidden = estado.vista !== "nuevo";
+    contenedorPestanas.hidden = estado.vista !== "ejercicio";
+    editor.hidden = estado.vista !== "ejercicio" || !estado.ejercicio || estado.pestana === "ayuda";
+    panelAyuda.hidden = estado.vista !== "ejercicio" || estado.pestana !== "ayuda";
+    botonGuardar.disabled = estado.vista !== "ejercicio" || !estado.ejercicio || !window.CONTABILIDAD_SUCIO;
   }
 
   async function cargaAnios() {
     const datos = await api("GET", "api/contabilidad");
     estado.anios = datos.anios;
     pintaSelector();
-    if (estado.anios.length) await cargaEjercicio(estado.anios[0]);
-    else mensaje.textContent = "Crea un ejercicio para empezar.";
+    if (estado.anios.length) {
+      await cargaComparativas();
+    } else {
+      $("#ctComparativasEstado").textContent = "Aún no hay ejercicios para comparar.";
+      mensaje.textContent = "Crea un ejercicio para empezar.";
+    }
   }
 
   async function cargaEjercicio(anio) {
     const datos = await api("GET", `api/contabilidad/${anio}`);
     estado.ejercicio = datos.ejercicio;
     estado.resumen = datos.resumen;
+    estado.resumenesAnuales.set(anio, datos.resumen);
+    estado.vista = "ejercicio";
     window.CONTABILIDAD_SUCIO = false;
     pintaSelector();
     pinta(estado.ejercicio);
     botonGuardar.disabled = true;
     limpiaError();
     mensaje.textContent = `Ejercicio ${anio}. Los meses vacíos aún no tienen datos registrados.`;
+  }
+
+  async function cargaComparativas() {
+    $("#ctComparativasEstado").textContent = "Cargando comparativas…";
+    const pendientes = estado.anios.filter(anio => !estado.resumenesAnuales.has(anio));
+    const resultados = await Promise.all(pendientes.map(async anio => {
+      const datos = await api("GET", `api/contabilidad/${anio}`);
+      return [anio, datos.resumen];
+    }));
+    resultados.forEach(([anio, resumen]) => estado.resumenesAnuales.set(anio, resumen));
+    pintaComparativas();
+  }
+
+  function pintaComparativas() {
+    const filas = estado.anios.map(anio => {
+      const resumen = estado.resumenesAnuales.get(anio);
+      if (!resumen) return "";
+      return `<tr><th scope="row">${anio}</th>
+        <td>${euros(resumen.secciones.ingresos.total_anual)}</td>
+        <td>${euros(resumen.secciones.gastos.total_anual)}</td>
+        <td>${euros(resumen.secciones.casa.total_anual)}</td>
+        <td>${euros(resumen.subtotal_anual)}</td>
+        <td>${porcentaje(resumen.porcentaje_ahorro_anual)}</td></tr>`;
+    }).join("");
+    $("#ctComparativasFilas").innerHTML = filas;
+    $("#ctComparativasEstado").textContent = estado.anios.length
+      ? `${estado.anios.length} ${estado.anios.length === 1 ? "ejercicio disponible" : "ejercicios disponibles"}.`
+      : "Aún no hay ejercicios para comparar.";
+    programaGraficos();
+  }
+
+  function dibujaComparativas() {
+    if (estado.vista !== "comparativas" || !window.G) return;
+    const anios = estado.anios.filter(anio => estado.resumenesAnuales.has(anio));
+    const resumenes = anios.map(anio => estado.resumenesAnuales.get(anio));
+    const colores = [G.css("--s1"), G.css("--s2"), G.css("--s3"), G.css("--s4")];
+    const series = [
+      ["Ingresos", resumen => resumen.secciones.ingresos.total_anual],
+      ["Gastos personales", resumen => resumen.secciones.gastos.total_anual],
+      ["Gastos de casa", resumen => resumen.secciones.casa.total_anual],
+      ["Subtotal disponible", resumen => resumen.subtotal_anual],
+    ].map(([nombre, valor], indice) => ({
+      nombre, valores: resumenes.map(resumen => valor(resumen)), color: colores[indice],
+    }));
+    const importes = $("#ctGrafComparativaImportes");
+    if (importes.clientWidth > 0) {
+      G.barrasAgrupadas(importes, {
+        categorias: anios.map(String), alto: 250, formatoValor: G.fmtEur,
+        formatoY: G.fmtEurCorto, series,
+      });
+    }
+    const ahorro = $("#ctGrafComparativaAhorro");
+    if (ahorro.clientWidth > 0) {
+      G.barrasAgrupadas(ahorro, {
+        categorias: anios.map(String), alto: 250, formatoValor: porcentaje,
+        formatoY: porcentaje, series: [{
+          nombre: "Ahorro", valores: resumenes.map(resumen => resumen.porcentaje_ahorro_anual),
+          color: colores[3],
+        }],
+      });
+    }
+    $("#ctLeyendaComparativaImportes").innerHTML = series.map(serie =>
+      `<li><span style="background:${serie.color}"></span>${limpio(serie.nombre)}</li>`
+    ).join("");
   }
 
   function parseaNumero(texto) {
@@ -515,8 +603,10 @@
       const datos = await api("PUT", `api/contabilidad/${candidato.anio}`, candidato);
       estado.ejercicio = datos.ejercicio;
       estado.resumen = datos.resumen;
+      estado.resumenesAnuales.set(candidato.anio, datos.resumen);
       window.CONTABILIDAD_SUCIO = false;
       pinta(estado.ejercicio);
+      pintaComparativas();
       mensaje.textContent = `Ejercicio ${candidato.anio} guardado.`;
       return true;
     } catch (error) {
@@ -539,19 +629,66 @@
   }
 
   botonGuardar.addEventListener("click", guarda);
-  selector.addEventListener("change", async () => {
-    const anterior = estado.ejercicio && estado.ejercicio.anio;
-    const siguiente = Number(selector.value);
-    if (window.CONTABILIDAD_SUCIO && !confirm("Hay cambios sin guardar. ¿Descartarlos y cambiar de ejercicio?")) {
-      selector.value = String(anterior);
+  async function seleccionaVista(vista, anio) {
+    if (anio != null) {
+      if (estado.ejercicio && estado.ejercicio.anio === anio) {
+        estado.vista = "ejercicio";
+        pintaSelector();
+        programaGraficos();
+        return;
+      }
+      if (window.CONTABILIDAD_SUCIO &&
+          !confirm("Hay cambios sin guardar. ¿Descartarlos y cambiar de ejercicio?")) return;
+      if (window.CONTABILIDAD_SUCIO) window.CONTABILIDAD_SUCIO = false;
+      try {
+        limpiaError();
+        await cargaEjercicio(anio);
+      } catch (error) {
+        muestraError(error);
+      }
       return;
     }
-    try {
-      limpiaError();
-      await cargaEjercicio(siguiente);
-    } catch (error) {
-      selector.value = anterior == null ? "" : String(anterior);
-      muestraError(error);
+    if (vista === "comparativas" && window.CONTABILIDAD_SUCIO) {
+      if (!confirm("Hay cambios sin guardar. ¿Descartarlos y ver las comparativas?")) return;
+      window.CONTABILIDAD_SUCIO = false;
+    }
+    estado.vista = vista;
+    pintaSelector();
+    if (vista === "comparativas") {
+      try {
+        limpiaError();
+        await cargaComparativas();
+      } catch (error) {
+        $("#ctComparativasEstado").textContent = "No se pudieron cargar las comparativas.";
+        muestraError(error);
+      }
+    } else {
+      programaGraficos();
+    }
+  }
+
+  contenedorAnioTabs.addEventListener("click", evento => {
+    const tab = evento.target.closest("[role='tab']");
+    if (!tab || !contenedorAnioTabs.contains(tab)) return;
+    if (tab.dataset.ctYear) seleccionaVista("ejercicio", Number(tab.dataset.ctYear));
+    else seleccionaVista(tab.dataset.ctView);
+  });
+  contenedorAnioTabs.addEventListener("keydown", evento => {
+    const tabs = [...contenedorAnioTabs.querySelectorAll("[role='tab']")];
+    const indice = tabs.indexOf(evento.target);
+    if (indice < 0) return;
+    let siguiente = indice;
+    if (evento.key === "ArrowRight") siguiente = (indice + 1) % tabs.length;
+    else if (evento.key === "ArrowLeft") siguiente = (indice - 1 + tabs.length) % tabs.length;
+    else if (evento.key === "Home") siguiente = 0;
+    else if (evento.key === "End") siguiente = tabs.length - 1;
+    else return;
+    evento.preventDefault();
+    tabs[siguiente].focus();
+    if (tabs[siguiente].dataset.ctYear) {
+      seleccionaVista("ejercicio", Number(tabs[siguiente].dataset.ctYear));
+    } else {
+      seleccionaVista(tabs[siguiente].dataset.ctView);
     }
   });
 
@@ -661,6 +798,7 @@
       aniosExistentesImportacion = [];
       vistaImportar.hidden = true;
       estado.anios = datos.anios;
+      estado.resumenesAnuales.clear();
       pintaSelector();
       await cargaEjercicio(datos.importados[0]);
       avisoImportar.textContent = `Importación completada para ${datos.importados.join(", ")}.`;
@@ -742,7 +880,9 @@
         { id: idNuevo(seccion), nombre });
       estado.ejercicio = datos.ejercicio;
       estado.resumen = datos.resumen;
+      estado.resumenesAnuales.set(estado.ejercicio.anio, datos.resumen);
       pinta(estado.ejercicio);
+      pintaComparativas();
       mensaje.textContent = `Categoría «${datos.categoria.nombre}» añadida.`;
     } catch (error) {
       muestraError(error);
@@ -756,7 +896,7 @@
   observadorArea.observe(raiz, { attributes: true, attributeFilter: ["hidden"] });
   window.addEventListener("resize", () => {
     clearTimeout(temporizadorGraficos);
-    temporizadorGraficos = setTimeout(dibujaGraficos, 140);
+    temporizadorGraficos = setTimeout(programaGraficos, 140);
   });
   window.addEventListener("beforeunload", evento => {
     if (window.CONTABILIDAD_SUCIO) {

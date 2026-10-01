@@ -278,23 +278,19 @@
 <main class="env areaContabilidad" id="areaContabilidad" data-area-panel="contabilidad"
       aria-labelledby="areaContabilidadTitulo" hidden>
   <section class="tarjeta ct-barra">
-    <header><h1 id="areaContabilidadTitulo">Contabilidad</h1></header>
-    <div class="ct-controles">
-      <label class="ct-campo" for="ctAnio">Ejercicio</label>
-      <select id="ctAnio" aria-label="Elegir ejercicio" disabled>
-        <option value="">Cargando ejercicios…</option>
-      </select>
-      <form id="ctCrearForm" class="ct-crear">
-        <label class="ct-campo" for="ctNuevoAnio">Crear ejercicio</label>
-        <input id="ctNuevoAnio" name="anio" type="number" min="1950" max="9999" step="1" required>
-        <button class="btn prim" type="submit">Crear año</button>
-      </form>
-      <span class="sep"></span>
+    <header class="ct-encabezado">
+      <h1 id="areaContabilidadTitulo">Contabilidad</h1>
       <button class="btn prim" id="ctGuardar" type="button" disabled>Guardar cambios</button>
-    </div>
+    </header>
     <p id="ctEstado" class="ct-estado" role="status" aria-live="polite"></p>
   </section>
-  <nav class="ct-tabs" id="ctTabs" role="tablist" aria-label="Secciones de Contabilidad">
+  <nav class="ct-tabs ct-tabs-anios" id="ctAnioTabs" role="tablist" aria-label="Ejercicios de Contabilidad">
+    <button class="ct-tab" id="ctTab-comparativas" type="button" role="tab" aria-selected="true"
+      aria-controls="ctComparativas" tabindex="0" data-ct-view="comparativas">Comparativas</button>
+    <button class="ct-tab" id="ctTab-anadir" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-nuevo" tabindex="-1" data-ct-view="nuevo">+ Añadir año</button>
+  </nav>
+  <nav class="ct-tabs" id="ctTabs" role="tablist" aria-label="Secciones de Contabilidad" hidden>
     <button class="ct-tab" id="ctTab-resumen" type="button" role="tab" aria-selected="true"
       aria-controls="ctPanel-resumen" tabindex="0" data-ct-tab="resumen">Resumen</button>
     <button class="ct-tab" id="ctTab-nomina" type="button" role="tab" aria-selected="false"
@@ -311,9 +307,49 @@
       aria-controls="ctPanel-ayuda" tabindex="-1" data-ct-tab="ayuda">Ayuda e importar</button>
   </nav>
   <div id="ctAviso" class="av ct-aviso" role="alert" hidden></div>
-  <section id="ctVacio" class="tarjeta ct-vacio" hidden>
-    <h2>Aún no hay ejercicios</h2>
-    <p class="subt">Crea un ejercicio para empezar a registrar ingresos, gastos y ahorros mes a mes.</p>
+  <section class="ct-panel ct-comparativas" id="ctComparativas" role="tabpanel" tabindex="0"
+    aria-labelledby="ctTab-comparativas">
+    <section class="tarjeta">
+      <header>
+        <h2>Comparativa entre años</h2>
+        <span class="subt">Ingresos, gastos, subtotal disponible y porcentaje de ahorro de cada ejercicio.</span>
+      </header>
+      <p id="ctComparativasEstado" class="ct-nota" role="status"></p>
+      <div class="ct-comparativas-graficos">
+        <figure class="ct-grafico-grupo">
+          <figcaption>Totales anuales</figcaption>
+          <div class="ct-grafico" id="ctGrafComparativaImportes" role="img"
+            aria-label="Comparación anual de ingresos, gastos personales, gastos de casa y subtotal"></div>
+          <ul class="ct-leyenda" id="ctLeyendaComparativaImportes"></ul>
+        </figure>
+        <figure class="ct-grafico-grupo">
+          <figcaption>Porcentaje de ahorro</figcaption>
+          <div class="ct-grafico" id="ctGrafComparativaAhorro" role="img"
+            aria-label="Comparación del porcentaje de ahorro anual entre ejercicios"></div>
+        </figure>
+      </div>
+      <div class="ct-grid ct-tabla-comparativas" role="region" aria-label="Datos anuales comparados" tabindex="0">
+        <table>
+          <thead><tr><th scope="col">Ejercicio</th><th scope="col">Ingresos</th>
+            <th scope="col">Gastos personales</th><th scope="col">Gastos de casa</th>
+            <th scope="col">Subtotal disponible</th><th scope="col">Ahorro</th></tr></thead>
+          <tbody id="ctComparativasFilas"></tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  <section class="ct-panel ct-nuevo-panel" id="ctPanel-nuevo" role="tabpanel" tabindex="0"
+    aria-labelledby="ctTab-anadir" hidden>
+    <section class="tarjeta">
+      <header><h2>Añadir ejercicio</h2>
+        <span class="subt">Crea un año para registrar ingresos, gastos y ahorros mes a mes.</span>
+      </header>
+      <form id="ctCrearForm" class="ct-crear">
+        <label class="ct-campo" for="ctNuevoAnio">Año</label>
+        <input id="ctNuevoAnio" name="anio" type="number" min="1950" max="9999" step="1" required>
+        <button class="btn prim" type="submit">Crear año</button>
+      </form>
+    </section>
   </section>
   <div id="ctEditor" hidden></div>
   <section class="ct-panel ct-ayuda-panel" id="ctPanel-ayuda" role="tabpanel" tabindex="0"
