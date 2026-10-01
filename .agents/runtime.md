@@ -3,10 +3,10 @@
 ## Lenguajes y dependencias
 
 - Python `>=3.10` (`pyproject.toml`); `.python-version` fija `3.12` y Docker usa `python:3.12-slim`.
-- `pyproject.toml` declara paquete `rumbo` versión `1.2.1`, `flask>=3.0` y `openpyxl>=3.1`. `requirements.txt` repite estas dependencias para instalaciones con pip; `uv.lock` fija versiones (Flask `3.1.3`, openpyxl `3.1.5` en el lock inspeccionado).
+- `pyproject.toml` declara paquete `rumbo` versión `1.2.2`, `flask>=3.0` y `openpyxl>=3.1`. `requirements.txt` repite estas dependencias para instalaciones con pip; `uv.lock` fija versiones (Flask `3.1.3`, openpyxl `3.1.5` en el lock inspeccionado).
 - `openpyxl` se importa dentro de la generación XLSX en `app/plantilla.py`; la app también ofrece plantilla CSV.
 - Frontend: HTML/CSS/JavaScript nativo, sin dependencias JavaScript o proceso Node observados. Flask es servidor; Werkzeug llega como dependencia transitiva.
-- La versión de ejecución usada por el comprobador remoto está en `app/VERSION` (`1.2.1`). El método de sincronización entre `app/VERSION` y `pyproject.toml` es `POR CONFIRMAR`.
+- La versión de ejecución usada por el comprobador remoto está en `app/VERSION` (`1.2.2`). El método de sincronización entre `app/VERSION` y `pyproject.toml` es `POR CONFIRMAR`.
 
 ## Variables de entorno observadas
 

@@ -421,10 +421,8 @@
 
     if (filtro) { $("#progEnv").hidden = true; return; }
 
-    // Progreso medido desde cero, que es como se lee de forma natural.
-    const propio = (D.objetivo && D.objetivo.activo) ? D.objetivo.importe : null;
-    const siguienteHito = (D.total.hitos.find(h => h.importe > m.valor) || {}).importe;
-    const sig = (propio && propio > m.valor) ? propio : siguienteHito;
+    // La meta avanza al siguiente hito configurado en lugar de quedarse fija.
+    const sig = (D.total.hitos.find(h => h.importe > m.valor) || {}).importe;
     if (!sig) { $("#progEnv").hidden = true; return; }
     const pct = Math.max(0, Math.min(1, m.valor / sig));
     $("#progEnv").hidden = false;

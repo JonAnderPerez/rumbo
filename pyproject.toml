@@ -1,6 +1,6 @@
 [project]
 name = "rumbo"
-version = "1.2.1"
+version = "1.2.2"
 description = "Panel local de tu patrimonio neto: fondos, ETFs, acciones, cripto y más"
 requires-python = ">=3.10"
 dependencies = [
