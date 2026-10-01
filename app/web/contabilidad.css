@@ -24,6 +24,8 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 .ct-tabs button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--s1)}
 .ct-tabs button:focus-visible{outline:2px solid var(--s1);outline-offset:-2px;border-radius:6px}
 .ct-panel{display:grid;gap:16px;min-width:0}
+.ct-editor,.ct-panel{grid-template-columns:minmax(0,1fr)}
+.ct-editor,.ct-panel,.ct-panel>.tarjeta{width:100%;min-width:0}
 .ct-panel[hidden]{display:none}
 .ct-panel>.tarjeta+.tarjeta{margin-top:0}
 .ct-crear{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -36,7 +38,7 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 .ct-editor{margin-top:20px;display:grid;gap:20px}
 .ct-editor .tarjeta + .tarjeta{margin-top:0}
 .ct-editor .ct-nota{margin:0;color:var(--tinta3);font-size:12.5px}
-.ct-grid{overflow-x:auto;border:1px solid var(--borde);border-radius:10px}
+.ct-grid{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;border:1px solid var(--borde);border-radius:10px}
 .ct-grid table{min-width:1120px;width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
 .ct-grid th,.ct-grid td{padding:7px 6px;border-bottom:1px solid var(--borde);text-align:right;white-space:nowrap}
 .ct-grid thead th{position:sticky;top:0;background:var(--sup2);color:var(--tinta2);font-weight:600;z-index:1}
@@ -103,13 +105,18 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
   .ct-editor{gap:14px;margin-top:14px}
   .ct-editor .tarjeta{padding:15px 13px}
   .ct-tabs{margin-bottom:10px;-webkit-overflow-scrolling:touch}
-  .ct-controles{align-items:stretch}
+  .ct-controles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);align-items:end}
   .ct-controles>.sep{display:none}
-  .ct-crear{width:100%}
-  .ct-crear input{flex:1}
-  .ct-controles>#ctGuardar{width:100%;justify-content:center}
+  .ct-controles select{width:100%;min-width:0}
+  .ct-crear{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;width:100%}
+  .ct-crear .ct-campo{grid-column:1/-1}
+  .ct-crear input{width:100%;min-width:0}
+  .ct-controles>#ctGuardar{grid-column:1/-1;width:100%;justify-content:center}
+  .ct-anadir{display:grid;grid-template-columns:minmax(0,1fr)}
+  .ct-anadir input{width:100%;min-width:0}
+  .ct-anadir .btn{justify-content:center}
   .ct-regla{grid-template-columns:minmax(0,1fr) 100px}
-  .ct-regla .ct-regla-categoria{grid-column:1/-1}
+  .ct-regla .ct-regla-categoria{grid-column:1/-1;min-width:0;overflow-wrap:anywhere}
   .ct-grid th:first-child,.ct-grid td:first-child{left:0}
   .ct-grafico-resumen{padding:10px;margin-bottom:16px}
   .ct-grafico-resumen .ct-grafico{min-height:210px}
