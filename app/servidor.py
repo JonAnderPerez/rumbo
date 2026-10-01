@@ -186,7 +186,7 @@ def api_contabilidad_ejercicio(anio):
     ejercicio = documento["ejercicios"].get(str(anio))
     if ejercicio is None:
         return jsonify(ok=False, errores=["Ese ejercicio no existe."]), 404
-    return jsonify(ok=True, ejercicio=ejercicio)
+    return jsonify(ok=True, ejercicio=ejercicio, resumen=contabilidad.calcula(ejercicio))
 
 
 @app.put("/api/contabilidad/<int:anio>")
@@ -208,7 +208,7 @@ def api_contabilidad_guardar(anio):
             guardado = contabilidad.guarda(DATOS, documento)["ejercicios"][str(anio)]
     except contabilidad.ErrorValidacion as error:
         return error_contabilidad(error)
-    return jsonify(ok=True, ejercicio=guardado)
+    return jsonify(ok=True, ejercicio=guardado, resumen=contabilidad.calcula(guardado))
 
 
 @app.delete("/api/contabilidad/<int:anio>")
@@ -255,7 +255,10 @@ def api_contabilidad_crear_categoria(anio, seccion):
             )
     except contabilidad.ErrorValidacion as error:
         return error_contabilidad(error)
-    return jsonify(ok=True, categoria=categoria), 201
+    return jsonify(
+        ok=True, categoria=categoria, ejercicio=guardado,
+        resumen=contabilidad.calcula(guardado),
+    ), 201
 
 
 @app.patch("/api/contabilidad/<int:anio>/categorias/<seccion>/<categoria_id>")
@@ -293,7 +296,10 @@ def api_contabilidad_actualizar_categoria(anio, seccion, categoria_id):
             )
     except contabilidad.ErrorValidacion as error:
         return error_contabilidad(error)
-    return jsonify(ok=True, categoria=categoria)
+    return jsonify(
+        ok=True, categoria=categoria, ejercicio=guardado,
+        resumen=contabilidad.calcula(guardado),
+    )
 
 
 @app.get("/api/buscar")

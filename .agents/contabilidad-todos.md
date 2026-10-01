@@ -183,17 +183,19 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 - [x] Permitir edición de configuración salarial, importes por mes, reglas porcentuales y nombres/categorías.
 - [x] Permitir añadir/renombrar categorías con persistencia y validación; no borrar importes existentes al cambiar el nombre.
 - [x] Usar controles accesibles, navegación responsive y formato español de moneda/porcentaje.
-- La edición se guarda explícitamente con «Guardar cambios»; los totales y cálculos derivados quedan pendientes de la fase 6.
+- La edición se guarda explícitamente con «Guardar cambios»; los cálculos se generan al leer o guardar y no se persisten.
 - **Aceptación:** navegar por dos ejercicios no mezcla sus datos; se pueden editar categorías e importes y recuperarlos tras recargar.
 
 ### 6. Calcular resúmenes de mes y año
 
-- [ ] Calcular totales mensuales y anuales para cada bloque, ingresos, gastos y ahorros.
-- [ ] Calcular saldo/subtotal y porcentaje de ahorro con denominadores y signos definidos; representar devoluciones y ajustes según el signo introducido.
-- [ ] Calcular importe objetivo por grupo a partir de porcentajes editables y compararlo con el gasto/ahorro real.
-- [ ] Mostrar meses sin datos como vacíos y no como registros confirmados de 0; no calcular porcentajes con denominador cero.
-- [ ] Hacer visibles las fórmulas y evitar contar dos veces las transferencias que aparezcan como ahorro.
-- [ ] Especificar, contrastar con el ejemplo y probar las fórmulas salariales españolas; identificarlas como estimaciones configurables, no nómina oficial ni asesoramiento fiscal.
+- [x] Calcular totales mensuales y anuales para cada bloque, ingresos, gastos y ahorros.
+- [x] Calcular saldo/subtotal y porcentaje de ahorro con denominadores y signos definidos; representar devoluciones y ajustes según el signo introducido.
+- [x] Calcular importe objetivo por grupo a partir de porcentajes editables y compararlo con el gasto/ahorro real.
+- [x] Mostrar meses sin datos como vacíos y no como registros confirmados de 0; no calcular porcentajes con denominador cero.
+- [x] Hacer visibles las fórmulas y evitar contar dos veces las transferencias que aparezcan como ahorro.
+- [x] Especificar, contrastar con el ejemplo y probar las fórmulas salariales españolas; identificarlas como estimaciones configurables, no nómina oficial ni asesoramiento fiscal.
+- El subtotal mensual solo se calcula cuando hay al menos un importe registrado en cada uno de ingresos, gastos y casa. El anual suma esos subtotales mensuales completos; su porcentaje usa los ingresos de esos mismos meses.
+- La desviación presupuestaria es `real - objetivo`: un importe positivo supera el objetivo. La comparación anual usa el objetivo de 12 meses aunque el ejercicio tenga datos parciales.
 - **Aceptación:** subtotales y porcentajes coinciden con casos sintéticos calculados a mano, incluyendo año parcial, meses vacíos, ajustes negativos y devoluciones.
 
 ### 7. Documentar y conservar las superficies existentes
@@ -215,8 +217,9 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 ## Fórmulas y límites que requieren especial cuidado
 
 - Los datos de nómina (bruto, prorrata, netos, retenciones y aportes del trabajador) dependen de circunstancias individuales. Las tasas y supuestos deben ser editables y las operaciones explicables.
-- Antes de codificar el subtotal definitivo, establecer si las aportaciones de ahorro ya salen del saldo disponible o se muestran aparte. El ejemplo presenta el «REAL» y «AHORROS» con las mismas cifras; no sumar ambos bloques dos veces.
-- Definir si una celda sin dato significa desconocido/no registrado y cómo se diferencia de un cero real.
+- «REAL» y «AHORROS» son comparaciones/detalles analíticos: no se restan otra vez del subtotal.
+- Una celda sin dato es desconocida/no registrada; el cero solo se muestra cuando se registra explícitamente.
+- Los subtotales mensuales requieren datos de los tres bloques que forman la fórmula. Los porcentajes se redondean a dos decimales y no se definen con denominador cero.
 - Año y mes deben validarse; categorías e importes de un ejercicio deben pertenecer únicamente a ese ejercicio.
 
 ## Orden y dependencias

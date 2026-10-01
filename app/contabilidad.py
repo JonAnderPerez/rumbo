@@ -9,7 +9,7 @@ import os
 import re
 import shutil
 import tempfile
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, localcontext
 
 VERSION = 1
 ARCHIVO = "contabilidad.json"
@@ -440,6 +440,192 @@ def _numero(valor, ruta, errores, minimo=None, maximo=None, importe=False):
     except (InvalidOperation, OverflowError):
         errores.append(f"{ruta}: el número no es válido.")
         return None
+
+
+def _decimal(valor):
+    return None if valor is None else Decimal(str(valor))
+
+
+def _dinero(valor):
+    if valor is None:
+        return None
+    with localcontext() as contexto:
+        contexto.prec = 50
+        return float(valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def _porcentaje(valor):
+    if valor is None:
+        return None
+    with localcontext() as contexto:
+        contexto.prec = 50
+        return float(valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def _suma_valores(valores):
+    conocidos = [_decimal(valor) for valor in valores if valor is not None]
+    return _dinero(sum(conocidos, Decimal(0))) if conocidos else None
+
+
+def _porcentaje_de(numerador, denominador):
+    if numerador is None or denominador is None or denominador == 0:
+        return None
+    return _porcentaje(Decimal(str(numerador)) / Decimal(str(denominador)) * 100)
+
+
+def calcula(ejercicio):
+    """Devuelve los cálculos visibles de un ejercicio sin alterar sus datos."""
+    nomina = ejercicio["nomina"]
+    bruto_anual = _decimal(nomina["bruto_anual"])
+    meses_extra = set(nomina["meses_pagas_extra"])
+    cantidad_extras = len(meses_extra)
+    metricas_nomina = {
+        "bruto_por_paga": None,
+        "prorrata_mensual": None,
+        "base_cotizacion_mensual": None,
+        "cotizacion_mensual": None,
+        "retencion_irpf_por_paga": None,
+        "neto_regular": None,
+        "neto_extra": None,
+        "bruto_anual_visible": None,
+        "diferencia_bruto_anual": None,
+    }
+    bruto_mensual = [None] * 12
+    neto_mensual = [None] * 12
+    if bruto_anual is not None:
+        numero_pagas = Decimal(12 + cantidad_extras)
+        bruto_paga = bruto_anual / numero_pagas
+        prorrata = bruto_paga * cantidad_extras / Decimal(12)
+        base_cotizacion = bruto_paga + prorrata
+        porcentaje_cotizacion = sum(
+            (_decimal(valor) for valor in nomina["porcentajes_cotizacion"].values()),
+            Decimal(0),
+        )
+        cotizacion = base_cotizacion * porcentaje_cotizacion / Decimal(100)
+        retencion = bruto_paga * _decimal(nomina["porcentaje_irpf"]) / Decimal(100)
+        neto_regular = bruto_paga - cotizacion - retencion
+        neto_extra = bruto_paga - retencion
+        metricas_nomina.update({
+            "bruto_por_paga": _dinero(bruto_paga),
+            "prorrata_mensual": _dinero(prorrata),
+            "base_cotizacion_mensual": _dinero(base_cotizacion),
+            "cotizacion_mensual": _dinero(cotizacion),
+            "retencion_irpf_por_paga": _dinero(retencion),
+            "neto_regular": _dinero(neto_regular),
+            "neto_extra": _dinero(neto_extra),
+        })
+        bruto_mensual = [
+            _dinero(bruto_paga * (2 if mes + 1 in meses_extra else 1))
+            for mes in range(12)
+        ]
+        neto_mensual = [
+            _dinero(neto_regular + (neto_extra if mes + 1 in meses_extra else 0))
+            for mes in range(12)
+        ]
+        bruto_visible = _suma_valores(bruto_mensual)
+        metricas_nomina["bruto_anual_visible"] = bruto_visible
+        metricas_nomina["diferencia_bruto_anual"] = _dinero(
+            _decimal(bruto_visible) - bruto_anual
+        )
+
+    secciones = {}
+    for seccion in SECCIONES:
+        filas = {}
+        for categoria in ejercicio["secciones"][seccion]["categorias"]:
+            if categoria["tipo"] == "nomina_bruta":
+                mensual = bruto_mensual
+            elif categoria["tipo"] == "nomina_neta":
+                mensual = neto_mensual
+            else:
+                mensual = categoria["valores"]
+            filas[categoria["id"]] = {
+                "mensual": mensual,
+                "anual": _suma_valores(mensual),
+            }
+
+        if seccion == "ingresos":
+            incluidas = [
+                categoria["id"] for categoria in ejercicio["secciones"][seccion]["categorias"]
+                if categoria["afecta_total"]
+            ]
+        else:
+            incluidas = list(filas)
+        total_mensual = [
+            _suma_valores(filas[identificador]["mensual"][mes] for identificador in incluidas)
+            for mes in range(12)
+        ]
+        secciones[seccion] = {
+            "categorias": filas,
+            "total_mensual": total_mensual,
+            "total_anual": _suma_valores(total_mensual),
+        }
+
+    ingresos = secciones["ingresos"]["total_mensual"]
+    gastos = secciones["gastos"]["total_mensual"]
+    casa = secciones["casa"]["total_mensual"]
+    subtotal_mensual = []
+    for ingreso, gasto, gasto_casa in zip(ingresos, gastos, casa):
+        if ingreso is None or gasto is None or gasto_casa is None:
+            subtotal_mensual.append(None)
+        else:
+            subtotal_mensual.append(_dinero(
+                _decimal(ingreso) - _decimal(gasto) - _decimal(gasto_casa)
+            ))
+    subtotal_anual = _suma_valores(subtotal_mensual)
+    ingresos_meses_completos = [
+        ingreso for ingreso, subtotal in zip(ingresos, subtotal_mensual)
+        if subtotal is not None
+    ]
+    ingresos_anual_completo = _suma_valores(ingresos_meses_completos)
+    ahorro_mensual = [
+        _porcentaje_de(subtotal, ingreso)
+        for subtotal, ingreso in zip(subtotal_mensual, ingresos)
+    ]
+    ahorro_anual = _porcentaje_de(subtotal_anual, ingresos_anual_completo)
+
+    neto_regular = metricas_nomina["neto_regular"]
+    reglas_presupuesto = []
+    for regla in ejercicio["presupuesto"]["reglas"]:
+        real = secciones["real"]["categorias"][regla["categoria_real_id"]]
+        objetivo_mensual = None
+        objetivo_anual = None
+        if neto_regular not in (None, 0):
+            objetivo_mensual = _dinero(
+                _decimal(neto_regular) * _decimal(regla["porcentaje"]) / Decimal(100)
+            )
+            objetivo_anual = _dinero(_decimal(objetivo_mensual) * 12)
+        desviacion_mensual = [
+            None if valor is None or objetivo_mensual is None
+            else _dinero(_decimal(valor) - _decimal(objetivo_mensual))
+            for valor in real["mensual"]
+        ]
+        desviacion_anual = (
+            None if real["anual"] is None or objetivo_anual is None
+            else _dinero(_decimal(real["anual"]) - _decimal(objetivo_anual))
+        )
+        reglas_presupuesto.append({
+            "id": regla["id"],
+            "categoria_real_id": regla["categoria_real_id"],
+            "objetivo_mensual": objetivo_mensual,
+            "objetivo_anual": objetivo_anual,
+            "real_mensual": real["mensual"],
+            "real_anual": real["anual"],
+            "desviacion_mensual": desviacion_mensual,
+            "desviacion_anual": desviacion_anual,
+        })
+
+    return {
+        "nomina": metricas_nomina,
+        "secciones": secciones,
+        "subtotal_mensual": subtotal_mensual,
+        "subtotal_anual": subtotal_anual,
+        "porcentaje_ahorro_mensual": ahorro_mensual,
+        "porcentaje_ahorro_anual": ahorro_anual,
+        "presupuesto": {
+            "base_mensual": neto_regular,
+            "reglas": reglas_presupuesto,
+        },
+    }
 
 
 def carga(carpeta_datos):
