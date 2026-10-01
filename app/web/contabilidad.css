@@ -1,8 +1,10 @@
 body[data-area-activa="contabilidad"] #tabs,
 body[data-area-activa="contabilidad"] #metaFecha,
 body[data-area-activa="contabilidad"] #btnPrecios{display:none}
+body[data-area-activa="contabilidad"] #ctAnioTabs{display:flex}
 body[data-area-activa="contabilidad"] #ctGuardar{display:inline-flex}
 #ctGuardar{display:none}
+#ctAnioTabs{display:none}
 .ct-campo{font-size:12.5px;font-weight:600;color:var(--tinta2)}
 .ct-crear input,.ct-editor input:not([type=checkbox]){
   min-width:0;background:var(--sup2);color:var(--tinta);border:1px solid var(--borde);
@@ -13,7 +15,7 @@ body[data-area-activa="contabilidad"] #ctGuardar{display:inline-flex}
   display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;
   margin:0 0 14px;border-bottom:1px solid var(--borde)
 }
-.ct-tabs-anios{margin-top:14px}
+.top .ct-tabs-anios{margin:0}
 .ct-tabs::-webkit-scrollbar{display:none}
 .ct-tabs[hidden]{display:none}
 .ct-tabs button{
@@ -29,6 +31,8 @@ body[data-area-activa="contabilidad"] #ctGuardar{display:inline-flex}
 .ct-editor,.ct-panel,.ct-panel>.tarjeta{width:100%;min-width:0}
 .ct-panel[hidden]{display:none}
 .ct-panel>.tarjeta+.tarjeta{margin-top:0}
+.ct-comparativas>.tarjeta:first-child{margin-top:16px}
+.ct-nuevo-panel>.tarjeta:first-child{margin-top:16px}
 .ct-crear{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ct-nuevo-panel .ct-crear{margin-top:4px}
 .ct-comparativas-graficos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:12px}

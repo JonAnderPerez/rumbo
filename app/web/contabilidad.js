@@ -37,7 +37,6 @@
   const contenedorAnioTabs = $("#ctAnioTabs");
   const contenedorPestanas = $("#ctTabs");
   const pestanas = [...contenedorPestanas.querySelectorAll("[data-ct-tab]")];
-  const panelAyuda = $("#ctPanel-ayuda");
   const panelComparativas = $("#ctComparativas");
   const panelNuevo = $("#ctPanel-nuevo");
   const botonGuardar = $("#ctGuardar");
@@ -78,9 +77,7 @@
     editor.querySelectorAll("[data-ct-panel]").forEach(panel => {
       panel.hidden = panel.dataset.ctPanel !== id;
     });
-    const esAyuda = id === "ayuda";
-    panelAyuda.hidden = !esAyuda;
-    editor.hidden = estado.vista !== "ejercicio" || esAyuda || !estado.ejercicio;
+    editor.hidden = estado.vista !== "ejercicio" || !estado.ejercicio;
     contenedorPestanas.hidden = estado.vista !== "ejercicio";
     programaGraficos();
   }
@@ -439,8 +436,7 @@
     panelComparativas.hidden = estado.vista !== "comparativas";
     panelNuevo.hidden = estado.vista !== "nuevo";
     contenedorPestanas.hidden = estado.vista !== "ejercicio";
-    editor.hidden = estado.vista !== "ejercicio" || !estado.ejercicio || estado.pestana === "ayuda";
-    panelAyuda.hidden = estado.vista !== "ejercicio" || estado.pestana !== "ayuda";
+    editor.hidden = estado.vista !== "ejercicio" || !estado.ejercicio;
     botonGuardar.disabled = estado.vista !== "ejercicio" || !estado.ejercicio || !window.CONTABILIDAD_SUCIO;
   }
 
