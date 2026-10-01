@@ -151,11 +151,11 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 
 ### 2. Extraer CSS y componentes compartidos
 
-- [ ] Extraer el `<style>` inline de `app/web/index.html` a ficheros bajo `app/web/` (tokens/temas, base y componentes; CSS específico por área cuando aporte claridad).
-- [ ] Sustituir los atributos `style` estáticos de HTML por clases compartidas; reservar estilos inline en JavaScript únicamente para valores dinámicos que vienen de los datos (por ejemplo, colores de productos).
-- [ ] Mantener idénticos los estilos, el tema claro/oscuro, los breakpoints y el aspecto de Mi Patrimonio durante la extracción.
-- [ ] Compartir estilos de appbar, tarjetas, tablas, campos, botones, avisos y estados vacíos entre las dos áreas; evitar duplicar reglas.
-- [ ] Actualizar `app/exportar.py` para incluir los CSS necesarios en el HTML generado y mantenerlo portable como archivo único.
+- [x] Extraer el `<style>` inline de `app/web/index.html` a ficheros bajo `app/web/` (tokens/temas, base y componentes; CSS específico por área cuando aporte claridad).
+- [x] Sustituir los atributos `style` estáticos de HTML por clases compartidas; reservar estilos inline en JavaScript únicamente para valores dinámicos que vienen de los datos (por ejemplo, colores de productos).
+- [x] Mantener idénticos los estilos, el tema claro/oscuro, los breakpoints y el aspecto de Mi Patrimonio durante la extracción.
+- [x] Compartir estilos de appbar, tarjetas, tablas, campos, botones, avisos y estados vacíos entre las dos áreas; evitar duplicar reglas.
+- [x] Actualizar `app/exportar.py` para incluir los CSS necesarios en el HTML generado y mantenerlo portable como archivo único.
 - **Aceptación:** Mi Patrimonio conserva su presentación y el HTML exportado funciona sin depender de hojas externas.
 
 ### 3. Añadir almacenamiento y API de Contabilidad

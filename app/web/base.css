@@ -1,0 +1,12 @@
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--plano); color:var(--tinta);
+  font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.015em}
+a{color:inherit}
+code{background:var(--sup2);padding:1px 6px;border-radius:5px;font-size:.9em}
+.env{max-width:1320px;margin:0 auto;padding:0 22px 72px}
+

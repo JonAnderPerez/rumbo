@@ -18,8 +18,8 @@ El almacenamiento principal es un JSON de cartera (`mis_datos/cartera.json`). Cu
 | `app/buscar.py` | Búsqueda por identificador/nombre y comprobación de precios de candidatos. |
 | `app/importar.py` | Lectura/preparación/vista previa/aplicación de CSV MyInvestor, tabla genérica y texto CSV. |
 | `app/plantilla.py` | Generación de plantillas CSV y XLSX. |
-| `app/exportar.py` | Empaqueta HTML, estilos/script inline y datos calculados en una página estática. |
-| `app/web/index.html` | Estructura, estilos CSS y punto de carga de scripts del frontend. |
+| `app/exportar.py` | Empaqueta HTML, estilos CSS y scripts inline junto con datos calculados en una página estática. |
+| `app/web/index.html` | Estructura y carga las hojas CSS compartidas antes de los scripts del frontend. |
 | `app/web/app.js` | Panel, navegación, visualización y llamadas al editor. |
 | `app/web/editor.js` | Edición de productos/movimientos/saldos e importación. |
 | `app/web/graficos.js` | Gráficos SVG propios sin librería de gráficos externa. |
@@ -46,6 +46,8 @@ El almacenamiento principal es un JSON de cartera (`mis_datos/cartera.json`). Cu
 `almacen.CARTERA_VACIA` define un ejemplo del objeto: `version`, `titular`, listas `productos`, `movimientos`, `valoraciones`, `comparador`, `hitos` y `objetivo`. El archivo demo aporta un ejemplo completo y puede evolucionar independientemente del archivo privado.
 
 Contabilidad tiene un contrato independiente en `app/contabilidad.py`: el fichero `contabilidad.json` contiene un mapa versionado de ejercicios y se guarda en la carpeta `PATRIMONIO_DATOS` (por defecto `mis_datos`). Sus copias automáticas se guardan en `copias_contabilidad/`, separadas de las copias de Patrimonio, con un máximo de 20. La lectura devuelve un documento vacío si aún no existe el fichero; los guardados validan todo el documento y usan reemplazo atómico. Las versiones desconocidas o los datos inválidos se rechazan; no hay migrador.
+
+La interfaz carga `tokens.css`, `base.css` y `componentes.css` en ese orden desde `app/web/`. `exportar.py` los inserta dentro del HTML estático para que la exportación siga siendo autónoma.
 
 `servidor.py` también usa `estado.json`, `calculado_<modo>.json`, `historico.json`, caché de precios y `copias/` dentro de la carpeta de datos. El contenido exacto y las claves internas de caché no son contrato público (`POR CONFIRMAR` antes de depender de ellas).
 

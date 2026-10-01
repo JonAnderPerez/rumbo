@@ -1,0 +1,22 @@
+/* ============================ tokens ============================ */
+:root{
+  color-scheme:dark;
+  --plano:#0d0d0d; --sup:#1a1a19; --sup2:#232320; --sup3:#2b2b28;
+  --tinta:#ffffff; --tinta2:#c3c2b7; --tinta3:#898781;
+  --rejilla:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --bien:#0ca30c; --mal:#e66767; --aviso:#fab219;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --s9:#2bb0d1; --s10:#c08a55; --s11:#93a1c2; --s12:#9cc21a;
+  --radio:14px;
+}
+:root[data-tema="claro"]{
+  color-scheme:light;
+  --plano:#f9f9f7; --sup:#fcfcfb; --sup2:#f2f1ec; --sup3:#e8e7e0;
+  --tinta:#0b0b0b; --tinta2:#52514e; --tinta3:#898781;
+  --rejilla:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  --bien:#006300; --mal:#d03b3b; --aviso:#b07d00;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --s9:#0e8fb0; --s10:#9a6a3a; --s11:#5d6b8a; --s12:#7c9a00;
+}
