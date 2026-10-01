@@ -29,9 +29,11 @@
     desempleo: "Desempleo",
     formacion_profesional: "Formación profesional",
   };
-  const estado = { anios: [], ejercicio: null, resumen: null, guardando: false };
+  const estado = { anios: [], ejercicio: null, resumen: null, guardando: false, pestana: "resumen" };
   const selector = $("#ctAnio");
   const editor = $("#ctEditor");
+  const contenedorPestanas = $("#ctTabs");
+  const pestanas = [...contenedorPestanas.querySelectorAll("[data-ct-tab]")];
   const botonGuardar = $("#ctGuardar");
   const aviso = $("#ctAviso");
   const mensaje = $("#ctEstado");
@@ -45,6 +47,36 @@
   });
   const porcentaje = valor => valor == null ? "—" :
     `${Number(valor).toLocaleString("es-ES", { maximumFractionDigits: 2 })} %`;
+
+  function muestraPestana(id) {
+    const seleccionada = pestanas.find(pestana => pestana.dataset.ctTab === id);
+    if (!seleccionada) return;
+    estado.pestana = id;
+    pestanas.forEach(pestana => {
+      const activa = pestana === seleccionada;
+      pestana.setAttribute("aria-selected", String(activa));
+      pestana.tabIndex = activa ? 0 : -1;
+    });
+    editor.querySelectorAll("[data-ct-panel]").forEach(panel => {
+      panel.hidden = panel.dataset.ctPanel !== id;
+    });
+    programaGraficos();
+  }
+
+  pestanas.forEach((pestana, indice) => {
+    pestana.addEventListener("click", () => muestraPestana(pestana.dataset.ctTab));
+    pestana.addEventListener("keydown", evento => {
+      let siguiente = indice;
+      if (evento.key === "ArrowRight") siguiente = (indice + 1) % pestanas.length;
+      else if (evento.key === "ArrowLeft") siguiente = (indice - 1 + pestanas.length) % pestanas.length;
+      else if (evento.key === "Home") siguiente = 0;
+      else if (evento.key === "End") siguiente = pestanas.length - 1;
+      else return;
+      evento.preventDefault();
+      pestanas[siguiente].focus();
+      muestraPestana(pestanas[siguiente].dataset.ctTab);
+    });
+  });
 
   async function api(metodo, url, cuerpo) {
     const respuesta = await fetch(url, {
@@ -220,69 +252,92 @@
         ])}
       </figure>`;
     }).join("");
+    const tablas = Object.fromEntries(secciones.map(([clave, titulo]) =>
+      [clave, tablaSeccion(clave, titulo, ejercicio, resumen.secciones[clave])]
+    ));
 
     editor.innerHTML = `<div class="ct-editor">
-      <section class="tarjeta">
-        <header><h2>Nómina y configuración salarial</h2>
-          <span class="subt">Estimaciones configurables; no representan una nómina oficial ni asesoramiento fiscal.</span>
-        </header>
-        <div class="ct-nomina">
-          ${entrada("Bruto anual", nomina.bruto_anual, "nomina.bruto_anual", "€", 'data-ct-vacio="si"')}
-          ${entrada("Retención de IRPF", nomina.porcentaje_irpf, "nomina.porcentaje_irpf", "%")}
-          ${Object.entries(nomina.porcentajes_cotizacion).map(([clave, valor]) =>
-            entrada(nombresCotizacion[clave], valor, `nomina.porcentajes_cotizacion.${clave}`, "%")
-          ).join("")}
-        </div>
-        <fieldset class="ct-pagas"><legend>Meses con paga extra</legend>${extras}</fieldset>
-        <dl class="ct-metricas">${metricasNomina}</dl>
-        <details class="ct-formulas"><summary>Cómo se estima la nómina</summary>
-          <p>Bruto por paga = bruto anual ÷ (12 + pagas extra). La prorrata mensual es bruto por paga × pagas extra ÷ 12.</p>
-          <p>Base de cotización = bruto por paga + prorrata. Cotización = base × suma de tasas configuradas. Retención = bruto por paga × IRPF.</p>
-          <p>Neto regular = bruto por paga − cotización mensual − retención. Neto extra = bruto por paga − retención. Cada importe visible se redondea a céntimos.</p>
-          <p>El bruto anual visible suma las mensualidades redondeadas; la diferencia frente a la entrada se muestra sin ajustar la nómina.</p>
-        </details>
+      <section class="ct-panel" id="ctPanel-resumen" role="tabpanel" tabindex="0"
+        aria-labelledby="ctTab-resumen" data-ct-panel="resumen">
+        <section class="tarjeta">
+          <header><h2>Total y subtotal</h2>
+            <span class="subt">Subtotal = ingresos computables − gastos personales − gastos de casa.</span>
+          </header>
+          <div class="ct-grafico-resumen">
+            <div class="ct-grafico" id="ctGrafTendencia" role="img"
+              aria-label="Evolución mensual de ingresos, gastos personales, gastos de casa y subtotal"></div>
+            ${leyenda([
+              { nombre: "Ingresos", color: colores[0] },
+              { nombre: "Gastos personales", color: colores[1] },
+              { nombre: "Gastos de casa", color: colores[2] },
+              { nombre: "Subtotal", color: colores[3] },
+            ])}
+          </div>
+          <div class="ct-grid" role="region" aria-label="Resumen mensual y anual" tabindex="0">
+            <table><thead><tr><th scope="col">Resumen</th>
+              ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}<th scope="col">Total año</th>
+            </tr></thead><tbody>${resumenFilas}</tbody></table>
+          </div>
+          <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Los meses sin registros no se tratan como cero: para calcular un subtotal mensual deben existir datos de ingresos, gastos y gastos de casa. El subtotal anual y su tasa usan los mismos meses completos. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
+        </section>
       </section>
-      <section class="tarjeta">
-        <header><h2>Reglas del presupuesto</h2>
-          <span class="subt">Objetivo mensual = neto regular × porcentaje; objetivo anual = mensual × 12. Desviación = real − objetivo; un valor positivo supera el objetivo.</span>
-        </header>
-        <div class="ct-reglas">${reglas}</div>
-        <div class="ct-grid ct-comparacion" role="region" aria-label="Comparación mensual y anual del presupuesto" tabindex="0">
-          <table><thead><tr><th scope="col">Grupo</th><th scope="col">Objetivo/mes</th>
-            <th scope="col">Objetivo/año</th><th scope="col">Real/año</th><th scope="col">Desviación/año</th>
-            ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}
-          </tr></thead><tbody>${presupuesto}</tbody></table>
-        </div>
-        <p class="ct-nota">«Real» se calcula desde los movimientos de origen: esenciales incluyen vivienda (sin muebles/otros), transporte, alimentos y vehículos; estilo de vida incluye salud, vacaciones, ocio, cajero, otros y muebles/otros; caprichos corresponde a hobbies; emergencia e inversión suma los ahorros. Las devoluciones restan del grupo asociado.</p>
-        <div class="ct-graficos-presupuesto">${comparacionGraficos}</div>
+      <section class="ct-panel" id="ctPanel-nomina" role="tabpanel" tabindex="0"
+        aria-labelledby="ctTab-nomina" data-ct-panel="nomina" hidden>
+        <section class="tarjeta">
+          <header><h2>Nómina y configuración salarial</h2>
+            <span class="subt">Estimaciones configurables; no representan una nómina oficial ni asesoramiento fiscal.</span>
+          </header>
+          <div class="ct-nomina">
+            ${entrada("Bruto anual", nomina.bruto_anual, "nomina.bruto_anual", "€", 'data-ct-vacio="si"')}
+            ${entrada("Retención de IRPF", nomina.porcentaje_irpf, "nomina.porcentaje_irpf", "%")}
+            ${Object.entries(nomina.porcentajes_cotizacion).map(([clave, valor]) =>
+              entrada(nombresCotizacion[clave], valor, `nomina.porcentajes_cotizacion.${clave}`, "%")
+            ).join("")}
+          </div>
+          <fieldset class="ct-pagas"><legend>Meses con paga extra</legend>${extras}</fieldset>
+          <dl class="ct-metricas">${metricasNomina}</dl>
+          <details class="ct-formulas"><summary>Cómo se estima la nómina</summary>
+            <p>Bruto por paga = bruto anual ÷ (12 + pagas extra). La prorrata mensual es bruto por paga × pagas extra ÷ 12.</p>
+            <p>Base de cotización = bruto por paga + prorrata. Cotización = base × suma de tasas configuradas. Retención = bruto por paga × IRPF.</p>
+            <p>Neto regular = bruto por paga − cotización mensual − retención. Neto extra = bruto por paga − retención. Cada importe visible se redondea a céntimos.</p>
+            <p>El bruto anual visible suma las mensualidades redondeadas; la diferencia frente a la entrada se muestra sin ajustar la nómina.</p>
+          </details>
+        </section>
       </section>
-      <section class="tarjeta">
-        <header><h2>Total y subtotal</h2>
-          <span class="subt">Subtotal = ingresos computables − gastos personales − gastos de casa.</span>
-        </header>
-        <div class="ct-grafico-resumen">
-          <div class="ct-grafico" id="ctGrafTendencia" role="img"
-            aria-label="Evolución mensual de ingresos, gastos personales, gastos de casa y subtotal"></div>
-          ${leyenda([
-            { nombre: "Ingresos", color: colores[0] },
-            { nombre: "Gastos personales", color: colores[1] },
-            { nombre: "Gastos de casa", color: colores[2] },
-            { nombre: "Subtotal", color: colores[3] },
-          ])}
-        </div>
-        <div class="ct-grid" role="region" aria-label="Resumen mensual y anual" tabindex="0">
-          <table><thead><tr><th scope="col">Resumen</th>
-            ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}<th scope="col">Total año</th>
-          </tr></thead><tbody>${resumenFilas}</tbody></table>
-        </div>
-        <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Los meses sin registros no se tratan como cero: para calcular un subtotal mensual deben existir datos de ingresos, gastos y gastos de casa. El subtotal anual y su tasa usan los mismos meses completos. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
+      <section class="ct-panel" id="ctPanel-ingresos" role="tabpanel" tabindex="0"
+        aria-labelledby="ctTab-ingresos" data-ct-panel="ingresos" hidden>
+        ${tablas.ingresos}
       </section>
-      ${secciones.map(([clave, titulo]) =>
-        tablaSeccion(clave, titulo, ejercicio, resumen.secciones[clave])
-      ).join("")}
+      <section class="ct-panel" id="ctPanel-gastos" role="tabpanel" tabindex="0"
+        aria-labelledby="ctTab-gastos" data-ct-panel="gastos" hidden>
+        ${tablas.gastos}
+        ${tablas.casa}
+      </section>
+      <section class="ct-panel" id="ctPanel-presupuesto" role="tabpanel" tabindex="0"
+        aria-labelledby="ctTab-presupuesto" data-ct-panel="presupuesto" hidden>
+        <section class="tarjeta">
+          <header><h2>Reglas del presupuesto</h2>
+            <span class="subt">Objetivo mensual = neto regular × porcentaje; objetivo anual = mensual × 12. Desviación = real − objetivo; un valor positivo supera el objetivo.</span>
+          </header>
+          <div class="ct-reglas">${reglas}</div>
+          <div class="ct-grid ct-comparacion" role="region" aria-label="Comparación mensual y anual del presupuesto" tabindex="0">
+            <table><thead><tr><th scope="col">Grupo</th><th scope="col">Objetivo/mes</th>
+              <th scope="col">Objetivo/año</th><th scope="col">Real/año</th><th scope="col">Desviación/año</th>
+              ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}
+            </tr></thead><tbody>${presupuesto}</tbody></table>
+          </div>
+          <p class="ct-nota">«Real» se calcula desde los movimientos de origen: esenciales incluyen vivienda (sin muebles/otros), transporte, alimentos y vehículos; estilo de vida incluye salud, vacaciones, ocio, cajero, otros y muebles/otros; caprichos corresponde a hobbies; emergencia e inversión suma los ahorros. Las devoluciones restan del grupo asociado.</p>
+          <div class="ct-graficos-presupuesto">${comparacionGraficos}</div>
+        </section>
+        ${tablas.real}
+      </section>
+      <section class="ct-panel" id="ctPanel-ahorros" role="tabpanel" tabindex="0"
+        aria-labelledby="ctTab-ahorros" data-ct-panel="ahorros" hidden>
+        ${tablas.ahorros}
+      </section>
     </div>`;
     editor.hidden = false;
-    programaGraficos();
+    muestraPestana(estado.pestana);
   }
 
   let temporizadorGraficos = null;
@@ -291,22 +346,23 @@
     const resumen = estado.resumen;
     const ejercicio = estado.ejercicio;
     const tendencia = $("#ctGrafTendencia");
-    if (!tendencia || tendencia.clientWidth === 0) return;
     const fechas = meses.map((_, indice) =>
       `${ejercicio.anio}-${String(indice + 1).padStart(2, "0")}-01`);
     const colores = [G.css("--s1"), G.css("--s2"), G.css("--s3"), G.css("--s4")];
-    G.multiLinea(tendencia, {
-      fechas,
-      alto: 280,
-      formatoY: G.fmtEurCorto,
-      formatoValor: G.fmtEur,
-      series: [
-        { nombre: "Ingresos", valores: resumen.secciones.ingresos.total_mensual, color: colores[0] },
-        { nombre: "Gastos personales", valores: resumen.secciones.gastos.total_mensual, color: colores[1] },
-        { nombre: "Gastos de casa", valores: resumen.secciones.casa.total_mensual, color: colores[2] },
-        { nombre: "Subtotal", valores: resumen.subtotal_mensual, color: colores[3], destacado: true },
-      ],
-    });
+    if (tendencia && tendencia.clientWidth > 0) {
+      G.multiLinea(tendencia, {
+        fechas,
+        alto: 280,
+        formatoY: G.fmtEurCorto,
+        formatoValor: G.fmtEur,
+        series: [
+          { nombre: "Ingresos", valores: resumen.secciones.ingresos.total_mensual, color: colores[0] },
+          { nombre: "Gastos personales", valores: resumen.secciones.gastos.total_mensual, color: colores[1] },
+          { nombre: "Gastos de casa", valores: resumen.secciones.casa.total_mensual, color: colores[2] },
+          { nombre: "Subtotal", valores: resumen.subtotal_mensual, color: colores[3], destacado: true },
+        ],
+      });
+    }
     resumen.presupuesto.reglas.forEach((regla, indice) => {
       const grafico = [...editor.querySelectorAll("[data-ct-grafico-regla]")]
         .find(elemento => elemento.dataset.ctGraficoRegla === regla.id);
@@ -343,6 +399,7 @@
     selector.disabled = !estado.anios.length;
     $("#ctVacio").hidden = estado.anios.length > 0;
     editor.hidden = !estado.ejercicio;
+    contenedorPestanas.hidden = !estado.ejercicio;
     botonGuardar.disabled = !estado.ejercicio || !window.CONTABILIDAD_SUCIO;
   }
 

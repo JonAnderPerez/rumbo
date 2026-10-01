@@ -8,6 +8,24 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
   border-radius:8px;padding:8px 10px;font:inherit;font-size:13px
 }
 .ct-controles select{min-width:110px}
+.ct-barra{margin-top:14px}
+.ct-tabs{
+  display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;
+  margin:0 0 14px;border-bottom:1px solid var(--borde)
+}
+.ct-tabs::-webkit-scrollbar{display:none}
+.ct-tabs[hidden]{display:none}
+.ct-tabs button{
+  flex:0 0 auto;border:0;border-bottom:2px solid transparent;background:transparent;
+  color:var(--tinta3);font:inherit;font-size:14px;font-weight:600;
+  padding:10px 15px 12px;cursor:pointer;white-space:nowrap
+}
+.ct-tabs button:hover{color:var(--tinta)}
+.ct-tabs button[aria-selected="true"]{color:var(--tinta);border-bottom-color:var(--s1)}
+.ct-tabs button:focus-visible{outline:2px solid var(--s1);outline-offset:-2px;border-radius:6px}
+.ct-panel{display:grid;gap:16px;min-width:0}
+.ct-panel[hidden]{display:none}
+.ct-panel>.tarjeta+.tarjeta{margin-top:0}
 .ct-crear{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ct-estado{min-height:1.2em;margin:8px 0 0;color:var(--tinta3);font-size:12.5px}
 .ct-estado:empty{display:none}
@@ -84,6 +102,7 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 @media(max-width:640px){
   .ct-editor{gap:14px;margin-top:14px}
   .ct-editor .tarjeta{padding:15px 13px}
+  .ct-tabs{margin-bottom:10px;-webkit-overflow-scrolling:touch}
   .ct-controles{align-items:stretch}
   .ct-controles>.sep{display:none}
   .ct-crear{width:100%}

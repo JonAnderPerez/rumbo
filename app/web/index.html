@@ -294,6 +294,20 @@
     </div>
     <p id="ctEstado" class="ct-estado" role="status" aria-live="polite"></p>
   </section>
+  <nav class="ct-tabs" id="ctTabs" role="tablist" aria-label="Secciones de Contabilidad" hidden>
+    <button class="ct-tab" id="ctTab-resumen" type="button" role="tab" aria-selected="true"
+      aria-controls="ctPanel-resumen" tabindex="0" data-ct-tab="resumen">Resumen</button>
+    <button class="ct-tab" id="ctTab-nomina" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-nomina" tabindex="-1" data-ct-tab="nomina">Nómina</button>
+    <button class="ct-tab" id="ctTab-ingresos" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-ingresos" tabindex="-1" data-ct-tab="ingresos">Ingresos</button>
+    <button class="ct-tab" id="ctTab-gastos" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-gastos" tabindex="-1" data-ct-tab="gastos">Gastos</button>
+    <button class="ct-tab" id="ctTab-presupuesto" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-presupuesto" tabindex="-1" data-ct-tab="presupuesto">Presupuesto</button>
+    <button class="ct-tab" id="ctTab-ahorros" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-ahorros" tabindex="-1" data-ct-tab="ahorros">Ahorros</button>
+  </nav>
   <div id="ctAviso" class="av ct-aviso" role="alert" hidden></div>
   <section id="ctVacio" class="tarjeta ct-vacio" hidden>
     <h2>Aún no hay ejercicios</h2>
