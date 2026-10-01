@@ -12,6 +12,18 @@ Crear en Rumbo un espacio de **Contabilidad**, separado de «Mi Patrimonio» y a
 - Los datos nuevos se guardan por separado de `cartera.json`, en la carpeta configurada con `PATRIMONIO_DATOS`.
 - Extraer el CSS inline a hojas externas reutilizables. La exportación web estática debe seguir siendo un único HTML autónomo.
 
+## Mejoras acordadas para la vista de Contabilidad
+
+- Hacer que las cuatro filas iniciales de «REAL» sean derivadas y no editables:
+  - Esenciales = gastos de casa excepto `muebles_otros` + `transporte_gasolina`, `alimentos` y `vehiculos` − `gastos_fijos_devuelto`.
+  - Estilo de vida = `entrenamiento_salud`, `vacaciones`, `ocio`, `dinero_cajero`, `otros` y `muebles_otros` − `estilo_vida_devuelto`.
+  - Caprichos = `hobbies` − `caprichos_devuelto`.
+  - Emergencia e inversión = total de la sección `ahorros`.
+- Conservar las filas «REAL» como comparación del presupuesto; no restarlas otra vez del subtotal. Las devoluciones se restan solo del grupo asociado y los ajustes de ingresos mantienen el signo introducido.
+- Mostrar la evolución mensual de ingresos, gastos personales, gastos de casa y subtotal, además de comparar objetivo mensual y real por grupo.
+- Mejorar el espaciado y la adaptación móvil del editor contable sin alterar «Mi Patrimonio» ni añadir dependencias frontend.
+- No hay datos contables de usuario que necesiten migración según lo confirmado para este cambio. Si aparecieran datos antes de una futura modificación de esquema, guardar una copia previa y documentar la migración.
+
 ## Fases
 
 ### 1. Definir datos, fórmulas y persistencia
@@ -79,8 +91,8 @@ Una categoría tiene ID estable (ASCII, minúsculas, guiones bajos), nombre visi
 }
 ```
 
-- `tipo` admite `manual`, `nomina_bruta` y `nomina_neta`. Los dos últimos solo se permiten en `ingresos`, derivan de `nomina` y no guardan `valores`.
-- `afecta_total` indica si una categoría manual de `ingresos` entra en el total de ingresos computables. Para `gastos`, `casa`, `real` y `ahorros` el total se obtiene de sus categorías manuales y no se guarda como una categoría adicional.
+- `tipo` admite `manual`, `nomina_bruta`, `nomina_neta` y `calculada`. Los tipos de nómina solo se permiten en `ingresos`; `calculada` se reserva para las filas derivadas iniciales de `real`. Ninguno guarda `valores`.
+- `afecta_total` indica si una categoría manual de `ingresos` entra en el total de ingresos computables. Para `gastos`, `casa`, `real` y `ahorros` el total se obtiene de sus categorías y no se guarda como una categoría adicional.
 - `valores` debe tener exactamente 12 elementos. `null` significa mes aún no registrado; `0` significa que sí se registró y el importe fue cero. Las sumas omiten nulos, y el total de una fila/mes/año permanece nulo si no hay ningún importe registrado que sumar.
 - Los importes se guardan como números JSON en euros, redondeados a céntimos; nunca como texto localizado. Las entradas manuales admiten negativos para representar ajustes/reversiones. El formato español (`1.234,56 €`) solo se aplica al mostrarlos.
 - Renombrar una categoría conserva su ID y sus importes. Los IDs no se reutilizan. Los campos calculados (totales, subtotales, objetivos, porcentajes, nómina derivada) no se persisten.
@@ -94,12 +106,12 @@ Estas son las categorías iniciales, no un conjunto cerrado: el usuario podrá a
 | `ingresos` | `Ingreso Bruto` (`nomina_bruta`), `Ingreso Neto` (`nomina_neta`), `Ajustes ingresos`, `Intereses`, `Gastos fijos devuelto`, `Estilo de vida devuelto`, `Caprichos devuelto` | Bruto es informativo y no suma al total. Neto, ajustes, intereses y devoluciones sí suman. |
 | `gastos` | `Transporte y Gasolina`, `Alimentos`, `Vehículos`, `Entrenamiento y Salud`, `Vacaciones`, `Ocio`, `Hobbies`, `Dinero cajero`, `Otros` | Categorías manuales; suman a gastos personales. |
 | `casa` | `Hipoteca`, `Agua`, `Luz`, `Gas`, `Internet + móvil`, `Seguro de vida + hogar`, `Comunidad`, `Impuestos`, `Muebles + otros` | Categorías manuales; suman a gastos de casa. |
-| `real` | `Gastos fijos esenciales`, `Estilo de vida`, `Caprichos`, `Fondo de emergencia e inversión` | Importes reales mensuales de comparación con el presupuesto. IDs enlazados desde `presupuesto.reglas[].categoria_real_id`. |
+| `real` | `Gastos fijos esenciales`, `Estilo de vida`, `Caprichos`, `Fondo de emergencia e inversión` | Celdas derivadas mensuales para comparar con el presupuesto; IDs enlazados desde `presupuesto.reglas[].categoria_real_id`. |
 | `ahorros` | `Jubilación EPSV`, `Inversión`, `Intereses de inversión`, `Activos físicos`, `Cripto`, `Fondo de emergencia` | Detalle informativo de ahorro; suma en su propio bloque, no se resta de nuevo al calcular el subtotal. |
 
 IDs sugeridos correspondientes al catálogo: `ingreso_bruto`, `ingreso_neto`, `ajustes_ingresos`, `intereses`, `gastos_fijos_devuelto`, `estilo_vida_devuelto`, `caprichos_devuelto`; `transporte_gasolina`, `alimentos`, `vehiculos`, `entrenamiento_salud`, `vacaciones`, `ocio`, `hobbies`, `dinero_cajero`, `otros`; `hipoteca`, `agua`, `luz`, `gas`, `internet_movil`, `seguro_vida_hogar`, `comunidad`, `impuestos`, `muebles_otros`; `esenciales`, `estilo_vida`, `caprichos`, `emergencia_inversion`; `jubilacion_epsv`, `inversion`, `inversion_intereses`, `activos_fisicos`, `cripto`, `fondo_emergencia`.
 
-Al crear un ejercicio no se copiarán importes del ejemplo de la conversación ni datos de una cartera real; solo la estructura, nombres y reglas porcentuales iniciales. Una categoría nueva se añade a una sección, con `tipo: "manual"` y 12 valores nulos. La primera versión permite crear y renombrar categorías; borrar categorías y reglas se deja para una fase posterior para evitar perder datos accidentalmente.
+Al crear un ejercicio no se copiarán importes del ejemplo de la conversación ni datos de una cartera real; solo la estructura, nombres y reglas porcentuales iniciales. Una categoría nueva se añade a una sección, con `tipo: "manual"` y 12 valores nulos. Las cuatro categorías iniciales de `real` usan `tipo: "calculada"`; se calculan a partir de las categorías fuente descritas arriba. La primera versión permite crear y renombrar categorías; borrar categorías y reglas se deja para una fase posterior para evitar perder datos accidentalmente.
 
 #### Nómina: entradas y cálculos
 
@@ -130,10 +142,12 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 - `objetivo_mensual = neto_regular * porcentaje / 100`; `objetivo_anual = objetivo_mensual * 12`. Se muestra también la desviación entre valor real y objetivo. Si `neto_regular` es cero o no existe, los objetivos son nulos.
 - `total_ingresos_mes` es la suma de categorías `ingresos` con `afecta_total: true`; `Ingreso Bruto` queda fuera para no contar sueldo bruto y neto a la vez.
 - `total_gastos_mes` suma `gastos`; `total_casa_mes` suma `casa`.
+- Las categorías iniciales de `real` se calculan mes a mes desde sus categorías fuente y devoluciones asociadas. La fila `emergencia_inversion` refleja `total_ahorros_mes`. Si no hay ningún dato fuente conocido para un grupo en ese mes, el resultado queda nulo; los importes fuente vacíos se omiten de las sumas una vez que hay al menos un dato conocido.
 - `subtotal_mes = total_ingresos_mes - total_gastos_mes - total_casa_mes`.
 - `porcentaje_ahorro_mes = subtotal_mes / total_ingresos_mes * 100`; es nulo si no hay ingresos computables o el denominador es cero.
 - `real` compara asignación/presupuesto; `ahorros` detalla movimientos de ahorro. Ambos son vistas analíticas separadas: ni `real` ni `ahorros` se vuelven a restar del subtotal. Las devoluciones aparecen en las categorías de ingresos indicadas; los ajustes negativos conservan su signo.
 - Totales anuales suman valores mensuales redondeados. Si los datos son parciales, las celdas vacías se ignoran; no se supone que un mes sin dato sea un cero real.
+- Los gráficos del año muestran ingresos, gastos personales, gastos de casa y subtotal por mes; las comparaciones de presupuesto muestran objetivo y real mensual para cada grupo. Las celdas nulas no se dibujan como ceros.
 
 #### Persistencia, validación y copias que implementará esta fase
 
@@ -207,12 +221,26 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 
 ### 8. Validar sin datos personales
 
-- [ ] Arrancar la aplicación con `PATRIMONIO_DATOS` apuntando a una carpeta temporal, `PATRIMONIO_NO_ABRIR=1` y puerto libre.
-- [ ] Comprobar `/api/ping`, rutas de Contabilidad, creación/edición de dos ejercicios, validación y persistencia tras reinicio.
-- [ ] Revisar la navegación de ambas áreas en escritorio y móvil, temas claro/oscuro y mensajes de error/estado vacío.
-- [ ] Probar Mi Patrimonio y la exportación estática antes y después de extraer CSS.
-- [ ] Confirmar que `mis_datos/` no se ha leído ni modificado y que no se añadieron datos reales o personales a Git.
-- **Aceptación:** flujo manual completo con datos sintéticos; anotar cualquier limitación porque el repositorio no documenta suite de tests ni lint.
+- [x] Arrancar la aplicación con `PATRIMONIO_DATOS` apuntando a una carpeta temporal, `PATRIMONIO_NO_ABRIR=1` y puerto libre.
+- [x] Comprobar `/api/ping`, rutas de Contabilidad, creación/edición de dos ejercicios, validación y persistencia tras reinicio.
+- [x] Revisar la navegación de ambas áreas en escritorio y móvil, temas claro/oscuro y mensajes de error/estado vacío.
+- [x] Probar Mi Patrimonio y la exportación estática antes y después de extraer CSS.
+- [x] Confirmar que `mis_datos/` no se ha leído ni modificado y que no se añadieron datos reales o personales a Git.
+- **Evidencia:** con datos sintéticos se verificaron `/api/ping`, creación y edición aislada de los ejercicios 2025/2026, edición de categoría/importes/nómina, rechazo de IRPF inválido sin sobrescritura y persistencia tras reiniciar. También se comprobó la API de Patrimonio y la exportación HTML autónoma.
+- **CSS:** se probó el panel y la exportación con el CSS inline del snapshot `0e926c5` y con la versión actual: la exportación mantiene los estilos embebidos y no incluye el área ni el script de Contabilidad.
+- **Límite:** no hay navegador instalado en el entorno; la navegación, responsive, temas y estados de interfaz se revisaron en el código/CSS, pero no se comprobó su representación visual interactiva. `uv` tampoco está instalado; se ejecutó la app con el Python disponible y sus dependencias ya presentes.
+- **Aceptación:** flujo de extremo a extremo por HTTP completado con datos sintéticos. La comprobación visual manual queda `POR CONFIRMAR` al no haber navegador; el repositorio no documenta suite de tests ni lint.
+
+### 9. Ajustar las celdas calculadas, los gráficos y el espacio visual
+
+- [x] Calcular «REAL» con las fórmulas de esta hoja, incluyendo devoluciones asignadas a su grupo y ahorro total; presentar esas celdas como solo lectura.
+- [x] Confirmar nómina, ingresos computables, totales, subtotales, porcentaje de ahorro, objetivo y desviación del presupuesto con escenarios calculados a mano.
+- [x] Añadir gráficos anuales de flujo mensual (ingresos, gastos personales, casa y subtotal) y comparación mensual objetivo/real por grupo. Reutilizar SVG existente cuando sea posible; sin librerías externas.
+- [x] Ajustar separación entre tarjetas, tablas, controles y gráficos, y revisar el comportamiento responsive y los temas en CSS sin cambiar la presentación de Patrimonio.
+- [x] Validar importes nulos, cero, negativos, meses incompletos y persistencia con `PATRIMONIO_DATOS` temporal; no leer ni modificar `mis_datos/`.
+- **Evidencia:** los cuatro grupos «REAL» se contrastaron con valores sintéticos, incluyendo devolución sin gastos, cero explícito, ahorros y celdas vacías. También se verificaron nómina, objetivo/desviación y subtotal. Con una carpeta temporal y el servidor Flask local se comprobaron `/api/ping`, creación y consulta de un ejercicio; sus celdas «REAL» se devolvieron calculadas y vacías. `node --check` y las inspecciones de Python/CSS no reportaron errores.
+- **Límite:** no había navegador disponible para inspección visual interactiva; el render responsive y los temas quedan `POR CONFIRMAR` visualmente. No hay suite formal de tests/lint configurada en el repositorio.
+- **Aceptación:** los cuatro «REAL» coinciden con las fórmulas acordadas; no son editables ni se restan otra vez del subtotal; los gráficos distinguen meses desconocidos y se adaptan al ancho disponible; sin datos personales ni cambios ajenos a Contabilidad.
 
 ## Fórmulas y límites que requieren especial cuidado
 

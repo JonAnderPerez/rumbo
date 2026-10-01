@@ -16,6 +16,25 @@ ARCHIVO = "contabilidad.json"
 CARPETA_COPIAS = "copias_contabilidad"
 COPIAS_MAX = 20
 SECCIONES = ("ingresos", "gastos", "casa", "real", "ahorros")
+FORMULAS_REAL = {
+    "esenciales": (
+        ("casa", ("hipoteca", "agua", "luz", "gas", "internet_movil",
+                  "seguro_vida_hogar", "comunidad", "impuestos")),
+        ("gastos", ("transporte_gasolina", "alimentos", "vehiculos")),
+        ("ingresos", ("gastos_fijos_devuelto",)),
+    ),
+    "estilo_vida": (
+        ("gastos", ("entrenamiento_salud", "vacaciones", "ocio",
+                    "dinero_cajero", "otros")),
+        ("casa", ("muebles_otros",)),
+        ("ingresos", ("estilo_vida_devuelto",)),
+    ),
+    "caprichos": (
+        ("gastos", ("hobbies",)),
+        ("ingresos", ("caprichos_devuelto",)),
+    ),
+}
+CATEGORIAS_REAL_CALCULADAS = frozenset(FORMULAS_REAL) | {"emergencia_inversion"}
 PORCENTAJES_COTIZACION = (
     "contingencias_comunes", "desempleo", "formacion_profesional",
 )
@@ -78,10 +97,10 @@ def crear_ejercicio(anio):
         ("muebles_otros", "Muebles + otros"),
     ]
     real = [
-        ("esenciales", "Gastos fijos esenciales"),
-        ("estilo_vida", "Estilo de vida"),
-        ("caprichos", "Caprichos"),
-        ("emergencia_inversion", "Fondo de emergencia e inversión"),
+        ("esenciales", "Gastos fijos esenciales", "calculada"),
+        ("estilo_vida", "Estilo de vida", "calculada"),
+        ("caprichos", "Caprichos", "calculada"),
+        ("emergencia_inversion", "Fondo de emergencia e inversión", "calculada"),
     ]
     ahorros = [
         ("jubilacion_epsv", "Jubilación EPSV"),
@@ -104,6 +123,10 @@ def crear_ejercicio(anio):
             categorias[seccion] = [
                 _categoria(cid, nombre, tipo, afecta_total)
                 for cid, nombre, tipo, afecta_total in filas
+            ]
+        elif seccion == "real":
+            categorias[seccion] = [
+                _categoria(cid, nombre, tipo, True) for cid, nombre, tipo in filas
             ]
         else:
             categorias[seccion] = [
@@ -364,6 +387,11 @@ def _valida_categoria(categoria, categoria_limpia, seccion, ruta, errores):
             errores.append(f"{ruta}.afecta_total: la nómina bruta es informativa y no suma.")
         elif tipo == "nomina_neta" and categoria.get("afecta_total") is not True:
             errores.append(f"{ruta}.afecta_total: la nómina neta debe sumar a ingresos.")
+    elif seccion == "real":
+        if tipo not in ("manual", "calculada"):
+            errores.append(f"{ruta}.tipo: tipo de categoría de «real» no válido.")
+        elif tipo == "calculada" and ident not in CATEGORIAS_REAL_CALCULADAS:
+            errores.append(f"{ruta}.tipo: no hay fórmula para esta categoría de «real».")
     elif tipo != "manual":
         errores.append(f"{ruta}.tipo: solo se permiten categorías manuales en «{seccion}».")
 
@@ -467,6 +495,52 @@ def _suma_valores(valores):
     return _dinero(sum(conocidos, Decimal(0))) if conocidos else None
 
 
+def _calcula_real(ejercicio, secciones):
+    """Calcula los grupos de presupuesto a partir de movimientos de origen."""
+    formulas = dict(FORMULAS_REAL)
+    formulas["emergencia_inversion"] = (
+        ("ahorros", None),
+    )
+    resultado = {}
+    for categoria in ejercicio["secciones"]["real"]["categorias"]:
+        identificador = categoria["id"]
+        formula = formulas.get(identificador)
+        if formula is None:
+            mensual = categoria.get("valores", [None] * 12)
+        else:
+            mensual = []
+            for mes in range(12):
+                valores = []
+                devoluciones = []
+                for seccion, categorias in formula:
+                    if categorias is None:
+                        valores.append(secciones[seccion]["total_mensual"][mes])
+                        continue
+                    for categoria_id in categorias:
+                        serie = secciones[seccion]["categorias"].get(categoria_id)
+                        valor = None if serie is None else serie["mensual"][mes]
+                        if seccion == "ingresos":
+                            devoluciones.append(valor)
+                        else:
+                            valores.append(valor)
+                if not any(valor is not None for valor in valores + devoluciones):
+                    mensual.append(None)
+                    continue
+                total = sum(
+                    (_decimal(valor) for valor in valores if valor is not None),
+                    Decimal(0),
+                ) - sum(
+                    (_decimal(valor) for valor in devoluciones if valor is not None),
+                    Decimal(0),
+                )
+                mensual.append(_dinero(total))
+        resultado[identificador] = {
+            "mensual": mensual,
+            "anual": _suma_valores(mensual),
+        }
+    return resultado
+
+
 def _porcentaje_de(numerador, denominador):
     if numerador is None or denominador is None or denominador == 0:
         return None
@@ -530,6 +604,8 @@ def calcula(ejercicio):
 
     secciones = {}
     for seccion in SECCIONES:
+        if seccion == "real":
+            continue
         filas = {}
         for categoria in ejercicio["secciones"][seccion]["categorias"]:
             if categoria["tipo"] == "nomina_bruta":
@@ -559,6 +635,25 @@ def calcula(ejercicio):
             "total_mensual": total_mensual,
             "total_anual": _suma_valores(total_mensual),
         }
+
+    real_calculado = _calcula_real(ejercicio, secciones)
+    categorias_real = {
+        categoria["id"]: {
+            "mensual": real_calculado[categoria["id"]]["mensual"],
+            "anual": real_calculado[categoria["id"]]["anual"],
+        }
+        for categoria in ejercicio["secciones"]["real"]["categorias"]
+    }
+    total_real_mensual = [
+        _suma_valores(fila["mensual"][mes] for fila in categorias_real.values())
+        for mes in range(12)
+    ]
+    secciones["real"] = {
+        "categorias": categorias_real,
+        "total_mensual": total_real_mensual,
+        "total_anual": _suma_valores(total_real_mensual),
+    }
+    secciones = {clave: secciones[clave] for clave in SECCIONES}
 
     ingresos = secciones["ingresos"]["total_mensual"]
     gastos = secciones["gastos"]["total_mensual"]

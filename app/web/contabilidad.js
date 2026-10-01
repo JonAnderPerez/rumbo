@@ -12,6 +12,11 @@
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
   ];
+  const mesesCortos = ["ene", "feb", "mar", "abr", "may", "jun",
+    "jul", "ago", "sep", "oct", "nov", "dic"];
+  const categoriasRealCalculadas = new Set([
+    "esenciales", "estilo_vida", "caprichos", "emergencia_inversion",
+  ]);
   const secciones = [
     ["ingresos", "Ingresos"],
     ["gastos", "Gastos"],
@@ -85,7 +90,9 @@
   }
 
   function celdaImporte(categoria, mes, seccion, resumen) {
-    if (categoria.tipo !== "manual") {
+    const calculada = categoria.tipo !== "manual" ||
+      (seccion === "real" && categoriasRealCalculadas.has(categoria.id));
+    if (calculada) {
       const valor = resumen.categorias[categoria.id].mensual[mes];
       return `<td class="ct-calculado" aria-label="Importe calculado: ${euros(valor)}">${euros(valor)}</td>`;
     }
@@ -100,7 +107,9 @@
     const categorias = ejercicio.secciones[seccion].categorias;
     const nota = seccion === "ingresos"
       ? "La nómina bruta y neta son valores derivados; no se editan en esta tabla."
-      : "Importes en euros; deja vacío un mes sin registrar.";
+      : seccion === "real"
+        ? "Las cuatro asignaciones iniciales se derivan de los gastos, devoluciones y ahorros; se muestran como solo lectura."
+        : "Importes en euros; deja vacío un mes sin registrar.";
     const filas = categorias.map(categoria => `<tr>
       <td class="ct-nombre">
         <input type="text" data-ct-name="${seccion}" data-ct-category="${limpio(categoria.id)}"
@@ -195,6 +204,22 @@
     ].map(([etiqueta, valores, anual, tipo]) => `<tr><th scope="row">${etiqueta}</th>
       ${valores.map(valor => `<td>${tipo === "porcentaje" ? porcentaje(valor) : euros(valor)}</td>`).join("")}
       <td class="ct-anual">${tipo === "porcentaje" ? porcentaje(anual) : euros(anual)}</td></tr>`).join("");
+    const colores = [G.css("--s1"), G.css("--s2"), G.css("--s3"), G.css("--s4")];
+    const leyenda = elementos => `<ul class="ct-leyenda">${elementos.map(item =>
+      `<li><span style="background:${item.color}"></span>${limpio(item.nombre)}</li>`
+    ).join("")}</ul>`;
+    const comparacionGraficos = resumen.presupuesto.reglas.map((regla, indice) => {
+      const norma = ejercicio.presupuesto.reglas.find(item => item.id === regla.id);
+      return `<figure class="ct-grafico-grupo">
+        <figcaption>${limpio(norma.nombre)}</figcaption>
+        <div class="ct-grafico" data-ct-grafico-regla="${limpio(regla.id)}"
+          role="img" aria-label="Objetivo y gasto real mensual: ${limpio(norma.nombre)}"></div>
+        ${leyenda([
+          { nombre: "Objetivo", color: G.css("--tinta3") },
+          { nombre: "Real", color: colores[indice % colores.length] },
+        ])}
+      </figure>`;
+    }).join("");
 
     editor.innerHTML = `<div class="ct-editor">
       <section class="tarjeta">
@@ -228,11 +253,23 @@
             ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}
           </tr></thead><tbody>${presupuesto}</tbody></table>
         </div>
+        <p class="ct-nota">«Real» se calcula desde los movimientos de origen: esenciales incluyen vivienda (sin muebles/otros), transporte, alimentos y vehículos; estilo de vida incluye salud, vacaciones, ocio, cajero, otros y muebles/otros; caprichos corresponde a hobbies; emergencia e inversión suma los ahorros. Las devoluciones restan del grupo asociado.</p>
+        <div class="ct-graficos-presupuesto">${comparacionGraficos}</div>
       </section>
       <section class="tarjeta">
         <header><h2>Total y subtotal</h2>
           <span class="subt">Subtotal = ingresos computables − gastos personales − gastos de casa.</span>
         </header>
+        <div class="ct-grafico-resumen">
+          <div class="ct-grafico" id="ctGrafTendencia" role="img"
+            aria-label="Evolución mensual de ingresos, gastos personales, gastos de casa y subtotal"></div>
+          ${leyenda([
+            { nombre: "Ingresos", color: colores[0] },
+            { nombre: "Gastos personales", color: colores[1] },
+            { nombre: "Gastos de casa", color: colores[2] },
+            { nombre: "Subtotal", color: colores[3] },
+          ])}
+        </div>
         <div class="ct-grid" role="region" aria-label="Resumen mensual y anual" tabindex="0">
           <table><thead><tr><th scope="col">Resumen</th>
             ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}<th scope="col">Total año</th>
@@ -245,6 +282,57 @@
       ).join("")}
     </div>`;
     editor.hidden = false;
+    programaGraficos();
+  }
+
+  let temporizadorGraficos = null;
+  function dibujaGraficos() {
+    if (raiz.hidden || editor.hidden || !window.G) return;
+    const resumen = estado.resumen;
+    const ejercicio = estado.ejercicio;
+    const tendencia = $("#ctGrafTendencia");
+    if (!tendencia || tendencia.clientWidth === 0) return;
+    const fechas = meses.map((_, indice) =>
+      `${ejercicio.anio}-${String(indice + 1).padStart(2, "0")}-01`);
+    const colores = [G.css("--s1"), G.css("--s2"), G.css("--s3"), G.css("--s4")];
+    G.multiLinea(tendencia, {
+      fechas,
+      alto: 280,
+      formatoY: G.fmtEurCorto,
+      formatoValor: G.fmtEur,
+      series: [
+        { nombre: "Ingresos", valores: resumen.secciones.ingresos.total_mensual, color: colores[0] },
+        { nombre: "Gastos personales", valores: resumen.secciones.gastos.total_mensual, color: colores[1] },
+        { nombre: "Gastos de casa", valores: resumen.secciones.casa.total_mensual, color: colores[2] },
+        { nombre: "Subtotal", valores: resumen.subtotal_mensual, color: colores[3], destacado: true },
+      ],
+    });
+    resumen.presupuesto.reglas.forEach((regla, indice) => {
+      const grafico = [...editor.querySelectorAll("[data-ct-grafico-regla]")]
+        .find(elemento => elemento.dataset.ctGraficoRegla === regla.id);
+      if (!grafico || grafico.clientWidth === 0) return;
+      const objetivo = regla.objetivo_mensual == null
+        ? Array(12).fill(null)
+        : Array(12).fill(regla.objetivo_mensual);
+      if (![...objetivo, ...regla.real_mensual].some(valor => valor != null)) {
+        grafico.innerHTML = '<p class="vacio">Sin datos suficientes para comparar.</p>';
+        return;
+      }
+      G.barrasAgrupadas(grafico, {
+        categorias: mesesCortos,
+        alto: 190,
+        formatoValor: G.fmtEur,
+        formatoY: G.fmtEurCorto,
+        series: [
+          { nombre: "Objetivo", valores: objetivo, color: G.css("--tinta3") },
+          { nombre: "Real", valores: regla.real_mensual, color: colores[indice % colores.length] },
+        ],
+      });
+    });
+  }
+
+  function programaGraficos() {
+    requestAnimationFrame(dibujaGraficos);
   }
 
   function pintaSelector() {
@@ -456,6 +544,12 @@
   });
 
   $("#ctNuevoAnio").value = String(new Date().getFullYear());
+  const observadorArea = new MutationObserver(programaGraficos);
+  observadorArea.observe(raiz, { attributes: true, attributeFilter: ["hidden"] });
+  window.addEventListener("resize", () => {
+    clearTimeout(temporizadorGraficos);
+    temporizadorGraficos = setTimeout(dibujaGraficos, 140);
+  });
   window.addEventListener("beforeunload", evento => {
     if (window.CONTABILIDAD_SUCIO) {
       evento.preventDefault();
