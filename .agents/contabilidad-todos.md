@@ -178,11 +178,12 @@ Los cálculos operan en decimal, redondean cada importe visible a céntimos (ROU
 
 ### 5. Crear vista anual y edición de categorías
 
-- [ ] Añadir selector de año, creación de nuevo ejercicio y un estado vacío claro cuando no hay datos.
-- [ ] Presentar bloques del ejemplo: Nómina/cálculos, Ingresos, Gastos, Gastos de casa, Total/subtotal, presupuesto «Real» y Ahorros.
-- [ ] Permitir edición de configuración salarial, importes por mes, reglas porcentuales y nombres/categorías.
-- [ ] Permitir añadir/renombrar categorías con persistencia y validación; no borrar importes existentes al cambiar el nombre.
-- [ ] Usar controles accesibles, navegación responsive y formato español de moneda/porcentaje.
+- [x] Añadir selector de año, creación de nuevo ejercicio y un estado vacío claro cuando no hay datos.
+- [x] Presentar bloques del ejemplo: Nómina/cálculos, Ingresos, Gastos, Gastos de casa, Total/subtotal, presupuesto «Real» y Ahorros.
+- [x] Permitir edición de configuración salarial, importes por mes, reglas porcentuales y nombres/categorías.
+- [x] Permitir añadir/renombrar categorías con persistencia y validación; no borrar importes existentes al cambiar el nombre.
+- [x] Usar controles accesibles, navegación responsive y formato español de moneda/porcentaje.
+- La edición se guarda explícitamente con «Guardar cambios»; los totales y cálculos derivados quedan pendientes de la fase 6.
 - **Aceptación:** navegar por dos ejercicios no mezcla sus datos; se pueden editar categorías e importes y recuperarlos tras recargar.
 
 ### 6. Calcular resúmenes de mes y año

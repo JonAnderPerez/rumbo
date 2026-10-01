@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="componentes.css">
+<link rel="stylesheet" href="contabilidad.css">
 </head>
 <body data-area-activa="patrimonio">
 
@@ -276,10 +277,29 @@
 
 <main class="env areaContabilidad" id="areaContabilidad" data-area-panel="contabilidad"
       aria-labelledby="areaContabilidadTitulo" hidden>
-  <section class="tarjeta">
+  <section class="tarjeta ct-barra">
     <header><h1 id="areaContabilidadTitulo">Contabilidad</h1></header>
-    <p class="subt">La vista anual editable de Contabilidad estará disponible aquí.</p>
+    <div class="ct-controles">
+      <label class="ct-campo" for="ctAnio">Ejercicio</label>
+      <select id="ctAnio" aria-label="Elegir ejercicio" disabled>
+        <option value="">Cargando ejercicios…</option>
+      </select>
+      <form id="ctCrearForm" class="ct-crear">
+        <label class="ct-campo" for="ctNuevoAnio">Crear ejercicio</label>
+        <input id="ctNuevoAnio" name="anio" type="number" min="1950" max="9999" step="1" required>
+        <button class="btn prim" type="submit">Crear año</button>
+      </form>
+      <span class="sep"></span>
+      <button class="btn prim" id="ctGuardar" type="button" disabled>Guardar cambios</button>
+    </div>
+    <p id="ctEstado" class="ct-estado" role="status" aria-live="polite"></p>
   </section>
+  <div id="ctAviso" class="av ct-aviso" role="alert" hidden></div>
+  <section id="ctVacio" class="tarjeta ct-vacio" hidden>
+    <h2>Aún no hay ejercicios</h2>
+    <p class="subt">Crea un ejercicio para empezar a registrar ingresos, gastos y ahorros mes a mes.</p>
+  </section>
+  <div id="ctEditor" hidden></div>
 </main>
 
 <dialog class="modal" id="modal"></dialog>
@@ -292,7 +312,7 @@
   // Con file:// no se puede anadir "?v=": algunos navegadores no encuentran
   // el archivo. Ahi basta con la revalidacion por fecha de modificacion.
   var sello = location.protocol === "file:" ? "" : "?v=" + Date.now();
-  ["datos.js", "graficos.js", "app.js", "editor.js"].forEach(function (archivo) {
+  ["datos.js", "graficos.js", "app.js", "editor.js", "contabilidad.js"].forEach(function (archivo) {
     var s = document.createElement("script");
     s.src = archivo + sello;
     s.async = false;

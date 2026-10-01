@@ -85,7 +85,7 @@ def pagina(web, datos, ocultar=False, titulo="Mi patrimonio"):
         datos = sin_importes(datos)
     datos = dict(datos, modo="estatico", avisos=[])
     html = lee("index.html")
-    for hoja in ("tokens.css", "base.css", "componentes.css"):
+    for hoja in ("tokens.css", "base.css", "componentes.css", "contabilidad.css"):
         enlace = f'<link rel="stylesheet" href="{hoja}">'
         if enlace not in html:
             raise RuntimeError(f"No encuentro la hoja de estilos {hoja} en index.html.")
