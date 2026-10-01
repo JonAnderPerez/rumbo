@@ -297,8 +297,6 @@ input[type=range]{width:100%;accent-color:var(--s1);height:22px}
 .av b{color:var(--tinta)}
 .pie{margin-top:34px;color:var(--tinta3);font-size:12px;line-height:1.7;border-top:1px solid var(--borde);padding-top:18px}
 
-/* ============================ modo video ============================ */
-body.video .topFila,body.video #seccionTabla,body.video .pie,body.video #seccionProyeccion,body.video .banner{display:none}
 .banner{margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--sup);
   border:1px solid var(--borde);border-left:3px solid var(--s1);border-radius:10px;padding:12px 16px;font-size:13.5px;line-height:1.5}
 .banner span{flex:1;min-width:240px;color:var(--tinta2)}
@@ -466,10 +464,6 @@ table.dt td.nota{max-width:220px;overflow:hidden;text-overflow:ellipsis;text-ali
   .filaValor{grid-template-columns:1fr}
   .mForm > header,.mCuerpo,.mForm > footer{padding-left:18px;padding-right:18px}
 }
-body.video .hCifra{font-size:clamp(58px,10vw,124px)}
-body.video .kpi .v{font-size:28px}
-body.video .tarjeta{padding:22px 24px}
-
 @media(max-width:640px){
   .env{padding:0 14px 56px}
   .tarjeta{padding:15px 15px}
@@ -582,28 +576,8 @@ body.video .tarjeta{padding:22px 24px}
 .compDetalles{margin-top:18px;border-top:1px solid var(--borde);padding-top:14px}
 .compDetalles summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--tinta2)}
 .compDetalles summary:hover{color:var(--tinta)}
-/* ---- Canal del autor ---- */
-.ayudaVideo{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.ayudaVideo > div:first-child{flex:1;min-width:260px}
-.ayudaVideo b{font-size:15px}
-.ayudaVideo p{margin:4px 0 0;font-size:13.5px;color:var(--tinta2);line-height:1.5}
-.ayudaVideo .botones{display:flex;gap:8px}
-.ayudaVideo .btn{text-decoration:none}
 .banner a,.pie a{color:var(--s1);text-decoration:none;font-weight:600}
 .banner a:hover,.pie a:hover{text-decoration:underline}
-.creditoCanal{display:block;margin-top:6px}
-.tarjetaCanal{position:fixed;right:22px;bottom:22px;z-index:50;width:340px;max-width:calc(100vw - 32px);
-  background:var(--sup);border:1px solid var(--borde);border-radius:16px;padding:16px 18px 14px;
-  box-shadow:0 18px 50px rgba(0,0,0,.28);animation:subeCanal .35s ease-out}
-@keyframes subeCanal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.tarjetaCanal .x{position:absolute;top:8px;right:10px;border:0;background:none;color:var(--tinta3);font-size:18px;cursor:pointer}
-.tarjetaCanal b{display:block;font-size:14.5px;padding-right:18px}
-.tarjetaCanal p{margin:6px 0 12px;font-size:13px;line-height:1.5;color:var(--tinta2)}
-.tarjetaCanal .botones{display:flex;gap:8px;align-items:center}
-.tarjetaCanal .btn.prim{background:#e0322b;text-decoration:none}
-.tarjetaCanal .ahoraNo{border:0;background:none;color:var(--tinta3);font:inherit;font-size:13px;cursor:pointer}
-body.video .tarjetaCanal{display:none}
-@media(max-width:640px){.tarjetaCanal{right:16px;left:16px;bottom:16px;width:auto}}
 /* ---- Marca ---- */
 .marca .logoIcono{width:24px;height:24px;border-radius:6px;display:block}
 .marca .nombreApp{font-weight:780;letter-spacing:.02em;text-transform:uppercase;font-size:14.5px}
@@ -622,7 +596,6 @@ body.video .tarjetaCanal{display:none}
       <span class="meta" id="metaFecha"></span>
       <button class="btn" id="btnPrecios" title="Descarga los precios de hoy de cada producto">↻ Actualizar precios</button>
       <button class="btn" id="btnTema" title="Cambiar entre claro y oscuro">◐ Tema</button>
-      <button class="btn" id="btnVideo" title="Oculta los controles y agranda las cifras">▶ Modo vídeo</button>
     </div>
     <nav class="tabs" id="tabs" role="tablist">
       <button data-tab="patrimonio" role="tab" aria-selected="true">Patrimonio</button>
@@ -639,8 +612,7 @@ body.video .tarjetaCanal{display:none}
 
 <div class="banner" id="bannerVersion" hidden><span id="bannerVersionTexto"></span></div>
 <div class="banner" id="bannerDemo" hidden>
-  <span><b>Estás viendo una cartera de ejemplo:</b> es la cartera real de <span class="autorCanal"></span>,
-  que cada mes cuenta cómo evoluciona en su <a class="enlaceCanal" target="_blank" rel="noopener">canal de YouTube</a>.
+  <span><b>Estás viendo una cartera de ejemplo:</b> es la cartera real del autor, compartida con fines divulgativos.
   No es una recomendación de inversión.</span>
   <button class="btn prim" id="btnEmpezar">Empezar con mis datos</button>
 </div>
@@ -806,14 +778,6 @@ body.video .tarjetaCanal{display:none}
 <div class="panel" id="tab-datos" role="tabpanel" hidden><div id="editor"></div></div>
 
 <div class="panel" id="tab-ayuda" role="tabpanel" hidden>
-  <section class="tarjeta ayudaTarjeta ayudaVideo">
-    <div><b>¿Prefieres verlo en vídeo?</b>
-      <p>En el canal de <span class="autorCanal"></span> tienes el tutorial paso a paso: instalación, cómo meter
-      tus datos y cómo sacarle partido.</p></div>
-    <div class="botones"><a class="btn prim" id="ayudaTutorial" target="_blank" rel="noopener">▶ Ver el tutorial</a>
-      <a class="btn enlaceSuscribir" target="_blank" rel="noopener">Suscribirme</a></div>
-  </section>
-
   <section class="tarjeta ayudaTarjeta">
     <header><h2>Ayuda</h2><span class="subt">Las dudas más habituales. Pulsa una para ver la respuesta.</span></header>
 
@@ -856,13 +820,7 @@ body.video .tarjetaCanal{display:none}
       <p>Antes de cada cambio, la app guarda una copia automática (las últimas 20). Ve a <b>Mis datos → Copias y web</b> y pulsa <b>«Recuperar»</b> en la copia de antes del error.</p></div></details>
 
     <details class="faq"><summary>¿Cómo actualizo a una versión nueva sin perder mis datos?</summary><div>
-      <ol>
-        <li>Cierra la app (la ventana negra).</li>
-        <li>Descarga el ZIP nuevo desde la página del proyecto en GitHub y descomprímelo.</li>
-        <li>Copia tu carpeta <code>mis_datos</code> de la versión antigua a la nueva (o copia todo lo nuevo encima de lo viejo, menos <code>mis_datos</code>).</li>
-        <li>Abre la app con «Iniciar» como siempre.</li>
-      </ol>
-      <p>Por si acaso, antes descarga una copia en <b>Mis datos → Copias y web</b>.</p></div></details>
+      <p>Descarga y descomprime la nueva versión desde el <a href="https://github.com/JonAnderPerez/rumbo" target="_blank" rel="noopener">repositorio de Rumbo en GitHub</a>. Copia la carpeta <code>mis_datos</code> de la versión anterior junto al nuevo <code>docker-compose.yml</code> y ejecuta <code>docker compose up --build -d</code>. Docker monta esa carpeta dentro del contenedor, así que tus datos se conservan.</p></div></details>
 
     <details class="faq"><summary>¿Cómo lo paso a otro ordenador?</summary><div>
       <p>En el ordenador viejo, <b>Mis datos → Copias y web → Descargar copia</b>. En el nuevo, instala la app, ábrela y, en ese mismo sitio, sube el archivo con <b>«Recuperar desde un archivo»</b>. También vale copiar la carpeta <code>mis_datos</code> entera.</p></div></details>
@@ -892,7 +850,7 @@ body.video .tarjetaCanal{display:none}
   // Con file:// no se puede anadir "?v=": algunos navegadores no encuentran
   // el archivo. Ahi basta con la revalidacion por fecha de modificacion.
   var sello = location.protocol === "file:" ? "" : "?v=" + Date.now();
-  ["datos.js", "canal.js", "graficos.js", "app.js", "editor.js"].forEach(function (archivo) {
+  ["datos.js", "graficos.js", "app.js", "editor.js"].forEach(function (archivo) {
     var s = document.createElement("script");
     s.src = archivo + sello;
     s.async = false;

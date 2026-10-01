@@ -11,7 +11,7 @@ Fondos, ETF, acciones, criptomonedas, oro, planes de pensiones, cuentas del banc
 
 ![El panel de patrimonio](docs/capturas/01_panel.png)
 
-Herramienta **gratuita** hecha por **Dani Dominguez Quant**. Si te resulta útil, la mejor forma de apoyarla es [suscribirte al canal de YouTube](https://www.youtube.com/channel/UCiS3qumDoE7QDwzo_ChU6yQ?sub_confirmation=1) ▶, donde cuento cada mes cómo evoluciona la cartera de ejemplo.
+Herramienta **gratuita** hecha por **Dani Dominguez Quant**.
 
 > **Aviso.** Es una herramienta informativa. **No es asesoramiento financiero** ni una recomendación de compra o venta. Los precios vienen de servicios públicos gratuitos y pueden tener errores o retrasos: no se garantiza la exactitud de los datos. La cartera de ejemplo que trae es la cartera real del autor, con fines divulgativos.
 
@@ -48,7 +48,7 @@ Herramienta **gratuita** hecha por **Dani Dominguez Quant**. Si te resulta útil
 - **Importación de golpe**: el CSV de MyInvestor, una plantilla de Excel o el extracto de cualquier banco convertido con una IA gratuita.
 - **Nunca tocas un archivo a mano**: todo se hace con formularios, con validación y mensajes en castellano llano.
 - **Copias de seguridad automáticas** y exportación del panel a una página web (con opción de **ocultar los importes**).
-- **Modo vídeo** para grabar tu panel, tema claro u oscuro, y **tus datos nunca salen de tu ordenador**.
+- Tema claro u oscuro, y **tus datos nunca salen de tu ordenador**.
 
 | | |
 |---|---|
@@ -247,7 +247,6 @@ EXTRACTO:
 - **Actualizar precios**: la app los actualiza sola al abrirse (si tienen más de 6 horas) y con el botón **«↻ Actualizar precios»**. En la ficha de cada producto verás de dónde sale su precio y de qué día es.
 - **Tu rutina mensual**: descarga los CSV de MyInvestor y arrástralos, anota tus compras de bolsa y pulsa **«Anotar todos de una vez»** con los saldos de tus cuentas. Cinco minutos.
 - **Solo largo plazo**: el botón del panel quita lo que no es inversión (tu colchón, las cuentas…) y recalcula todas las cifras. Cada producto tiene su interruptor «Inversión a largo plazo».
-- **Modo vídeo** (tecla `V`): esconde los controles y agranda las cifras. Las teclas `1` a `6` cambian de pestaña.
 - **Tema claro u oscuro** con el botón **«Tema»**.
 
 ---
@@ -371,6 +370,6 @@ mis_datos/       TUS DATOS (se crea al usarla; no se sube a ningún sitio)
 
 [MIT](LICENSE): puedes usarla, copiarla y modificarla libremente.
 
-Hecha por **Dani Dominguez Quant**. ¿Te ha servido? [Suscríbete al canal](https://www.youtube.com/channel/UCiS3qumDoE7QDwzo_ChU6yQ?sub_confirmation=1) ▶
+Hecha por **Dani Dominguez Quant**.
 
 **Herramienta informativa. No es asesoramiento financiero ni una recomendación de inversión. No se garantiza la exactitud de los datos ni de los precios. Úsala bajo tu propia responsabilidad.**

@@ -384,8 +384,8 @@ def api_exportar_web():
     return Response(html.encode("utf-8"), mimetype="text/html",
                     headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
 
-
-REPO = "https://github.com/danidm98/rumbo"
+#"https://github.com/danidm98/rumbo"
+REPO = "https://github.com/JonAnderPerez/rumbo"
 _VERSION = {}
 
 

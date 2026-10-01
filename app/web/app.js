@@ -1035,14 +1035,7 @@
        <b>Aviso:</b> herramienta informativa. No es asesoramiento financiero ni una recomendación de compra o venta.
        Los precios vienen de servicios públicos gratuitos y pueden tener errores o retrasos: no se garantiza su exactitud.`;
     if ($("#bannerDemo")) $("#bannerDemo").hidden = D.modo !== "demo";
-    const K = window.CANAL;
-    if (K) {
-      $("#pie").insertAdjacentHTML("beforeend", `<span class="creditoCanal">Herramienta gratuita hecha por
-        ${K.autor} · ¿Te resulta útil? <a href="${K.suscribir}" target="_blank" rel="noopener">Suscríbete al canal ▶</a></span>`);
-      document.querySelectorAll(".autorCanal").forEach(el => { el.textContent = K.autor; });
-      document.querySelectorAll(".enlaceCanal").forEach(el => { el.href = K.canal; });
-      document.querySelectorAll(".enlaceSuscribir").forEach(el => { el.href = K.suscribir; });
-    }
+    $("#pie").insertAdjacentHTML("beforeend", "<br>Herramienta gratuita hecha por Dani Dominguez Quant.");
   }
 
   /* ---------------------------------------------- bitcoin en vivo */
@@ -1120,11 +1113,6 @@
     }
   };
   if (location.protocol === "file:" && $("#btnPrecios")) $("#btnPrecios").hidden = true;
-  $("#btnVideo").onclick = () => {
-    document.body.classList.toggle("video");
-    $("#btnVideo").classList.toggle("act");
-    setTimeout(pintarTab, 60);
-  };
   document.querySelectorAll("#tabs button").forEach(b => { b.onclick = () => irA(b.dataset.tab); });
   $("#mesSel").onchange = e => { estado.mes = +e.target.value; pintaMes(); };
   $("#mesPrev").onclick = () => { estado.mes = Math.max(0, estado.mes - 1); pintaMes(); };
@@ -1139,7 +1127,6 @@
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
     if (e.key === "Escape" && filtrando()) { estado.ocultos.clear(); pintaPatrimonio(); }
-    if (e.key === "v" && !e.metaKey && !e.ctrlKey) $("#btnVideo").click();
     if (e.key === "l" && !e.metaKey && !e.ctrlKey && estado.tab === "patrimonio") {
       estado.ocultos = filtrando() ? new Set() : new Set(idsCorto());
       pintaPatrimonio();
