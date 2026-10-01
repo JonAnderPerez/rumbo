@@ -294,7 +294,7 @@
     </div>
     <p id="ctEstado" class="ct-estado" role="status" aria-live="polite"></p>
   </section>
-  <nav class="ct-tabs" id="ctTabs" role="tablist" aria-label="Secciones de Contabilidad" hidden>
+  <nav class="ct-tabs" id="ctTabs" role="tablist" aria-label="Secciones de Contabilidad">
     <button class="ct-tab" id="ctTab-resumen" type="button" role="tab" aria-selected="true"
       aria-controls="ctPanel-resumen" tabindex="0" data-ct-tab="resumen">Resumen</button>
     <button class="ct-tab" id="ctTab-nomina" type="button" role="tab" aria-selected="false"
@@ -307,6 +307,8 @@
       aria-controls="ctPanel-presupuesto" tabindex="-1" data-ct-tab="presupuesto">Presupuesto</button>
     <button class="ct-tab" id="ctTab-ahorros" type="button" role="tab" aria-selected="false"
       aria-controls="ctPanel-ahorros" tabindex="-1" data-ct-tab="ahorros">Ahorros</button>
+    <button class="ct-tab" id="ctTab-ayuda" type="button" role="tab" aria-selected="false"
+      aria-controls="ctPanel-ayuda" tabindex="-1" data-ct-tab="ayuda">Ayuda e importar</button>
   </nav>
   <div id="ctAviso" class="av ct-aviso" role="alert" hidden></div>
   <section id="ctVacio" class="tarjeta ct-vacio" hidden>
@@ -314,6 +316,89 @@
     <p class="subt">Crea un ejercicio para empezar a registrar ingresos, gastos y ahorros mes a mes.</p>
   </section>
   <div id="ctEditor" hidden></div>
+  <section class="ct-panel ct-ayuda-panel" id="ctPanel-ayuda" role="tabpanel" tabindex="0"
+    aria-labelledby="ctTab-ayuda" data-ct-panel="ayuda" hidden>
+    <section class="tarjeta ct-importar" aria-labelledby="ctImportarTitulo">
+      <header>
+        <h2 id="ctImportarTitulo">Importar Contabilidad desde JSON</h2>
+        <span class="subt">Convierte las tablas de Excel con el prompt y pega aquí el JSON que genere la IA.</span>
+      </header>
+      <ol class="ct-importar-pasos">
+        <li>Copia las tablas de uno o varios años desde Excel y pégalas al final del prompt.</li>
+        <li>Pide a la IA que devuelva únicamente el JSON, sin comentarios ni texto antes o después.</li>
+        <li>Pega la respuesta completa en el campo inferior o selecciona un archivo con extensión <code>.json</code>.</li>
+        <li>Pulsa «Revisar JSON» y comprueba los años y categorías antes de importar.</li>
+      </ol>
+      <p class="ct-nota">Solo se importan archivos y texto JSON; no se suben libros Excel. En años existentes se sustituyen los meses de las categorías incluidas y se conservan las demás. «Real» y los totales se calculan de nuevo. Si ya hay datos, Rumbo guarda una copia automática antes de importar.</p>
+      <p class="ct-nota">Antes de enviar datos a una IA externa, elimina nombres, DNI, IBAN, cuentas y cualquier otro dato personal. Rumbo no envía ni el Excel ni el JSON a servicios externos.</p>
+      <form id="ctImportarForm" class="ct-importar-form">
+        <label class="ct-campo" for="ctJsonImportar">Pega aquí el JSON completo de la IA</label>
+        <textarea id="ctJsonImportar" rows="12" spellcheck="false"
+          placeholder='{"ejercicios":[{"anio":2026,"secciones":{...}}]}'></textarea>
+        <label class="ct-campo" for="ctArchivoImportar">O selecciona un archivo .json</label>
+        <input id="ctArchivoImportar" type="file" accept=".json,application/json">
+        <button class="btn prim" type="submit">Revisar JSON</button>
+      </form>
+      <div id="ctImportarAviso" class="av ct-aviso" role="alert" hidden></div>
+      <div id="ctImportarVista" class="ct-importar-vista" hidden>
+        <p id="ctImportarResumen" role="status"></p>
+        <details class="ct-importar-detalle">
+          <summary>Ver categorías detectadas</summary>
+          <ul id="ctImportarCategorias"></ul>
+        </details>
+        <ul id="ctImportarAdvertencias"></ul>
+        <button id="ctImportarConfirmar" class="btn prim" type="button">Importar y guardar</button>
+      </div>
+      <details class="ct-prompt">
+        <summary>Prompt para convertir las tablas copiadas de Excel en JSON</summary>
+        <label class="ct-campo" for="ctPromptIA">Prompt reutilizable para una IA externa</label>
+        <textarea id="ctPromptIA" rows="26" readonly>Convierte las tablas de contabilidad que pego al final en JSON para importar en Rumbo. Puede haber uno o varios años, normalmente una hoja por año, y columnas mensuales de enero a diciembre.
+
+Devuelve SOLO JSON válido, sin bloque Markdown ni explicaciones, con esta estructura:
+{
+  "ejercicios": [{
+    "anio": 2026,
+    "nomina": {
+      "bruto_anual": 35760.60,
+      "porcentaje_irpf": 16,
+      "porcentajes_cotizacion": {
+        "contingencias_comunes": 4.82,
+        "desempleo": 1.55,
+        "formacion_profesional": 0.10
+      },
+      "meses_pagas_extra": [7, 12]
+    },
+    "secciones": {
+      "ingresos": [
+        {"categoria": "Ingreso Bruto", "meses": [null, null, null, null, null, null, null, null, null, null, null, null]},
+        {"categoria": "Ingreso Neto", "meses": [null, null, null, null, null, null, null, null, null, null, null, null]},
+        {"categoria": "Ajustes ingresos", "meses": [null, null, null, null, null, null, null, null, null, null, null, null]}
+      ],
+      "gastos": [],
+      "casa": [],
+      "ahorros": []
+    }
+  }]
+}
+
+Reglas:
+- Sustituye los valores de ejemplo por los datos reales; no inventes cifras.
+- Cada lista "meses" debe tener exactamente 12 valores numéricos, de enero a diciembre. Usa null para una celda vacía y 0 solo cuando la hoja muestre expresamente cero.
+- Convierte euros a números sin símbolo ni separador de miles; usa punto decimal. Mantén los importes negativos.
+- Usa solo estas secciones: ingresos, gastos, casa y ahorros. Incluye las filas de categorías y sus 12 importes.
+- Omite filas TOTAL, subtotales, porcentajes y la sección REAL: Rumbo calcula los totales y REAL automáticamente.
+- Incluye en ingresos las filas de nómina bruta y neta. Si aparece configuración salarial, incluye los campos de "nomina"; si no, omite "nomina". Los meses de paga extra son números del 1 al 12.
+- Si hay varios años, incluye un objeto por año. No combines categorías distintas ni dupliques filas.
+- Si falta una categoría en un año, omítela. No cambies el signo ni la moneda de un importe.
+- No incluyas datos personales en el JSON.
+
+DATOS COPIADOS:
+[Pega aquí las tablas de Excel]</textarea>
+        <button id="ctCopiarPrompt" class="btn" type="button">Copiar prompt</button>
+        <span id="ctPromptEstado" class="ct-estado" role="status" aria-live="polite"></span>
+      </details>
+    </section>
+  </section>
 </main>
 
 <dialog class="modal" id="modal"></dialog>

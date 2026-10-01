@@ -35,6 +35,20 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 .ct-vacio{margin-top:16px}
 .ct-vacio h2{font-size:16px}
 .ct-vacio p{margin-bottom:0}
+.ct-importar{margin-top:0}
+.ct-importar-form{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin:14px 0}
+.ct-importar-form label,.ct-importar-form textarea{grid-column:1/-1}
+.ct-importar-form input{max-width:100%;color:var(--tinta2);font:inherit;font-size:13px}
+.ct-importar-form textarea{width:100%;min-width:0;padding:10px;border:1px solid var(--borde);border-radius:8px;background:var(--sup2);color:var(--tinta);font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}
+.ct-importar-pasos{margin:12px 0 14px;padding-left:22px;color:var(--tinta2);font-size:13px}
+.ct-importar-vista{margin-top:14px;padding:12px 14px;background:var(--sup2);border-radius:9px}
+.ct-importar-vista p{margin:0 0 8px}
+.ct-importar-vista ul{margin:6px 0 12px;padding-left:20px;color:var(--tinta2);font-size:13px}
+.ct-importar-detalle{margin:8px 0}
+.ct-importar-detalle summary{cursor:pointer;font-size:13px;font-weight:600}
+.ct-prompt{margin-top:18px;border-top:1px solid var(--borde);padding-top:14px}
+.ct-prompt summary{cursor:pointer;font-weight:600}
+.ct-prompt textarea{display:block;width:100%;margin:12px 0 8px;padding:10px;border:1px solid var(--borde);border-radius:8px;background:var(--sup2);color:var(--tinta);font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}
 .ct-editor{margin-top:20px;display:grid;gap:20px}
 .ct-editor .tarjeta + .tarjeta{margin-top:0}
 .ct-editor .ct-nota{margin:0;color:var(--tinta3);font-size:12.5px}
@@ -109,6 +123,9 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
   .ct-controles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);align-items:end}
   .ct-controles>.sep{display:none}
   .ct-controles select{width:100%;min-width:0}
+  .ct-importar-form{grid-template-columns:minmax(0,1fr)}
+  .ct-importar-form input,.ct-importar-form .btn{width:100%}
+  .ct-importar-vista .btn{width:100%;justify-content:center}
   .ct-crear{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;width:100%}
   .ct-crear .ct-campo{grid-column:1/-1}
   .ct-crear input{width:100%;min-width:0}

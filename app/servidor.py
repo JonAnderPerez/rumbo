@@ -21,7 +21,10 @@ import webbrowser
 from flask import Flask, Response, jsonify, request, send_from_directory
 from werkzeug.serving import make_server
 
-from . import almacen, buscar, contabilidad, exportar, importar, motor, plantilla
+from . import (
+    almacen, buscar, contabilidad, exportar, importar, importar_contabilidad,
+    motor, plantilla,
+)
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(RAIZ, "app", "web")
@@ -155,6 +158,49 @@ def api_contabilidad_ejercicios():
     return jsonify(ok=True, anios=sorted(
         (int(anio) for anio in documento["ejercicios"]), reverse=True,
     ))
+
+
+@app.post("/api/contabilidad/importar/previsualizar")
+def api_contabilidad_importar_previsualizar():
+    try:
+        contenido = request.stream.read(10 * 1024 * 1024 + 1)
+        if not contenido.strip():
+            return jsonify(
+                ok=False, errores=["Pega el JSON de la IA o selecciona un archivo .json."]
+            ), 400
+        plan = importar_contabilidad.lee_json(contenido)
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+        return jsonify(
+            ok=True, plan=plan, ejercicios=importar_contabilidad.resumen(plan, documento),
+            advertencias=plan["advertencias"],
+        )
+    except importar_contabilidad.ErrorImportacion as error:
+        return jsonify(ok=False, errores=error.errores), 400
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+
+
+@app.post("/api/contabilidad/importar")
+def api_contabilidad_importar():
+    try:
+        datos = datos_contabilidad()
+        if set(datos) != {"plan"}:
+            raise contabilidad.ErrorValidacion(["Envía únicamente el plan de importación."])
+        plan = importar_contabilidad.valida_plan(datos["plan"])
+        with cerrojo:
+            documento = contabilidad.carga(DATOS)
+            anios_importados = importar_contabilidad.aplica_plan(documento, plan)
+            guardado = contabilidad.guarda(DATOS, documento)
+    except importar_contabilidad.ErrorImportacion as error:
+        return jsonify(ok=False, errores=error.errores), 400
+    except contabilidad.ErrorValidacion as error:
+        return error_contabilidad(error)
+    return jsonify(
+        ok=True,
+        anios=sorted((int(anio) for anio in guardado["ejercicios"]), reverse=True),
+        importados=anios_importados,
+    )
 
 
 @app.post("/api/contabilidad")

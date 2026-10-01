@@ -34,9 +34,22 @@
   const editor = $("#ctEditor");
   const contenedorPestanas = $("#ctTabs");
   const pestanas = [...contenedorPestanas.querySelectorAll("[data-ct-tab]")];
+  const panelAyuda = $("#ctPanel-ayuda");
   const botonGuardar = $("#ctGuardar");
   const aviso = $("#ctAviso");
   const mensaje = $("#ctEstado");
+  const formularioImportar = $("#ctImportarForm");
+  const avisoImportar = $("#ctImportarAviso");
+  const vistaImportar = $("#ctImportarVista");
+  const botonImportar = $("#ctImportarConfirmar");
+  const resumenImportar = $("#ctImportarResumen");
+  const listaCategoriasImportar = $("#ctImportarCategorias");
+  const listaAdvertenciasImportar = $("#ctImportarAdvertencias");
+  const campoPrompt = $("#ctPromptIA");
+  const campoJsonImportar = $("#ctJsonImportar");
+  const archivoJsonImportar = $("#ctArchivoImportar");
+  let planImportacion = null;
+  let aniosExistentesImportacion = [];
   const limpio = valor => String(valor == null ? "" : valor).replace(/[&<>"']/g,
     c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const formato = valor => valor == null ? "" : Number(valor).toLocaleString("es-ES", {
@@ -60,6 +73,10 @@
     editor.querySelectorAll("[data-ct-panel]").forEach(panel => {
       panel.hidden = panel.dataset.ctPanel !== id;
     });
+    const esAyuda = id === "ayuda";
+    panelAyuda.hidden = !esAyuda;
+    editor.hidden = esAyuda || !estado.ejercicio;
+    $("#ctVacio").hidden = estado.anios.length > 0 || esAyuda;
     programaGraficos();
   }
 
@@ -138,7 +155,7 @@
   function tablaSeccion(seccion, titulo, ejercicio, calculo) {
     const categorias = ejercicio.secciones[seccion].categorias;
     const nota = seccion === "ingresos"
-      ? "La nómina bruta y neta son valores derivados; no se editan en esta tabla."
+      ? "La nómina bruta y neta se calculan desde la configuración salarial; los importes mensuales importados se guardan como datos manuales de ese ejercicio."
       : seccion === "real"
         ? "Las cuatro asignaciones iniciales se derivan de los gastos, devoluciones y ahorros; se muestran como solo lectura."
         : "Importes en euros; deja vacío un mes sin registrar.";
@@ -182,6 +199,9 @@
   function pinta(ejercicio) {
     const nomina = ejercicio.nomina;
     const resumen = estado.resumen;
+    const nominaImportada = ejercicio.secciones.ingresos.categorias.some(categoria =>
+      ["ingreso_bruto", "ingreso_neto"].includes(categoria.id) && categoria.tipo === "manual"
+    );
     const extras = meses.map((mes, indice) => `<label>
       <input type="checkbox" data-ct-paga="${indice + 1}"${nomina.meses_pagas_extra.includes(indice + 1) ? " checked" : ""}>
       ${mes}
@@ -286,7 +306,9 @@
         aria-labelledby="ctTab-nomina" data-ct-panel="nomina" hidden>
         <section class="tarjeta">
           <header><h2>Nómina y configuración salarial</h2>
-            <span class="subt">Estimaciones configurables; no representan una nómina oficial ni asesoramiento fiscal.</span>
+            <span class="subt">${nominaImportada
+              ? "Las estimaciones usan esta configuración, pero no recalculan las filas de nómina importadas como datos mensuales."
+              : "Estimaciones configurables; no representan una nómina oficial ni asesoramiento fiscal."}</span>
           </header>
           <div class="ct-nomina">
             ${entrada("Bruto anual", nomina.bruto_anual, "nomina.bruto_anual", "€", 'data-ct-vacio="si"')}
@@ -398,9 +420,9 @@
         estado.ejercicio.anio === anio ? " selected" : ""}>${anio}</option>`).join("")
       : '<option value="">Sin ejercicios</option>';
     selector.disabled = !estado.anios.length;
-    $("#ctVacio").hidden = estado.anios.length > 0;
-    editor.hidden = !estado.ejercicio;
-    contenedorPestanas.hidden = !estado.ejercicio;
+    $("#ctVacio").hidden = estado.anios.length > 0 || estado.pestana === "ayuda";
+    editor.hidden = !estado.ejercicio || estado.pestana === "ayuda";
+    contenedorPestanas.hidden = false;
     botonGuardar.disabled = !estado.ejercicio || !window.CONTABILIDAD_SUCIO;
   }
 
@@ -546,6 +568,134 @@
       $("#ctNuevoAnio").value = "";
     } catch (error) {
       muestraError(error);
+    }
+  });
+
+  formularioImportar.addEventListener("submit", async evento => {
+    evento.preventDefault();
+    const archivo = archivoJsonImportar.files[0];
+    const textoJson = campoJsonImportar.value.trim();
+    planImportacion = null;
+    aniosExistentesImportacion = [];
+    vistaImportar.hidden = true;
+    avisoImportar.hidden = true;
+    if (!textoJson && !archivo) {
+      avisoImportar.textContent = "Pega el JSON de la IA o selecciona un archivo .json.";
+      avisoImportar.hidden = false;
+      return;
+    }
+    formularioImportar.querySelectorAll("input, button, textarea")
+      .forEach(campo => { campo.disabled = true; });
+    const botonRevisar = formularioImportar.querySelector('button[type="submit"]');
+    botonRevisar.textContent = "Revisando…";
+    try {
+      const contenido = textoJson || await archivo.text();
+      const respuesta = await fetch("api/contabilidad/importar/previsualizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: contenido,
+      });
+      let datos = {};
+      try { datos = await respuesta.json(); } catch (error) {
+        throw new Error("El servidor devolvió una respuesta que no se puede leer.");
+      }
+      if (!respuesta.ok || datos.ok === false) {
+        throw new Error((datos.errores || ["No se pudo revisar el JSON."]).join("\n"));
+      }
+      planImportacion = datos.plan;
+      const aniosExistentes = datos.ejercicios.filter(ejercicio => ejercicio.existente)
+        .map(ejercicio => ejercicio.anio);
+      aniosExistentesImportacion = aniosExistentes;
+      const etiquetas = datos.ejercicios.map(ejercicio =>
+        `${ejercicio.anio}: ${ejercicio.categorias} categorías${ejercicio.incluyeNomina ? " y configuración de nómina" : ""}`
+      );
+      resumenImportar.textContent = `Se han encontrado ${etiquetas.join("; ")}.` +
+        (aniosExistentes.length
+          ? ` En los años existentes (${aniosExistentes.join(", ")}) se sustituirán los meses de las categorías importadas.`
+          : " Se crearán los ejercicios que todavía no existan.");
+      listaAdvertenciasImportar.replaceChildren();
+      listaCategoriasImportar.replaceChildren();
+      const nombresSeccion = {
+        ingresos: "Ingresos", gastos: "Gastos", casa: "Gastos de casa", ahorros: "Ahorros",
+      };
+      planImportacion.ejercicios.forEach(ejercicio => {
+        Object.entries(ejercicio.secciones).forEach(([seccion, filas]) => {
+          const item = document.createElement("li");
+          item.textContent = `${ejercicio.anio} · ${nombresSeccion[seccion]}: ` +
+            filas.map(fila => fila.categoria).join(", ");
+          listaCategoriasImportar.append(item);
+        });
+      });
+      (datos.advertencias || []).forEach(texto => {
+        const item = document.createElement("li");
+        item.textContent = texto;
+        listaAdvertenciasImportar.append(item);
+      });
+      botonImportar.textContent = aniosExistentes.length
+        ? "Importar y sobrescribir categorías coincidentes"
+        : "Importar y guardar";
+      vistaImportar.hidden = false;
+    } catch (error) {
+      avisoImportar.textContent = error && error.message || "No se pudo revisar el archivo.";
+      avisoImportar.hidden = false;
+    } finally {
+      formularioImportar.querySelectorAll("input, button, textarea")
+        .forEach(campo => { campo.disabled = false; });
+      botonRevisar.textContent = "Revisar JSON";
+    }
+  });
+
+  botonImportar.addEventListener("click", async () => {
+    if (!planImportacion) return;
+    const aniosExistentes = aniosExistentesImportacion;
+    if (aniosExistentes.length && !confirm(
+      `Se sustituirán los importes mensuales de las categorías incluidas en ${aniosExistentes.join(", ")}. ` +
+      "Las demás categorías se conservarán y se hará una copia de seguridad si ya hay datos. ¿Continuar?"
+    )) return;
+    if (window.CONTABILIDAD_SUCIO && !await guarda()) return;
+    botonImportar.disabled = true;
+    try {
+      limpiaError();
+      const datos = await api("POST", "api/contabilidad/importar", { plan: planImportacion });
+      planImportacion = null;
+      aniosExistentesImportacion = [];
+      vistaImportar.hidden = true;
+      estado.anios = datos.anios;
+      pintaSelector();
+      await cargaEjercicio(datos.importados[0]);
+      avisoImportar.textContent = `Importación completada para ${datos.importados.join(", ")}.`;
+      avisoImportar.hidden = false;
+      archivoJsonImportar.value = "";
+      campoJsonImportar.value = "";
+    } catch (error) {
+      avisoImportar.textContent = error && error.message || "No se pudo importar el archivo.";
+      avisoImportar.hidden = false;
+    } finally {
+      botonImportar.disabled = false;
+    }
+  });
+
+  function invalidaVistaImportacion() {
+    planImportacion = null;
+    aniosExistentesImportacion = [];
+    vistaImportar.hidden = true;
+    avisoImportar.hidden = true;
+  }
+  archivoJsonImportar.addEventListener("change", invalidaVistaImportacion);
+  campoJsonImportar.addEventListener("input", invalidaVistaImportacion);
+
+  $("#ctCopiarPrompt").addEventListener("click", async () => {
+    const estadoPrompt = $("#ctPromptEstado");
+    try {
+      await navigator.clipboard.writeText(campoPrompt.value);
+      estadoPrompt.textContent = "Prompt copiado.";
+    } catch (error) {
+      campoPrompt.select();
+      if (document.execCommand("copy")) {
+        estadoPrompt.textContent = "Prompt copiado.";
+      } else {
+        estadoPrompt.textContent = "No se pudo copiar automáticamente; selecciona el texto y cópialo.";
+      }
     }
   });
 
