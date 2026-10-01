@@ -155,6 +155,12 @@
       seccion === "ingresos" ? "Total ingresos computables" : `Total ${titulo.toLowerCase()}`
     }</th>${calculo.total_mensual.map(valor => `<td>${euros(valor)}</td>`).join("")}
       <td class="ct-anual">${euros(calculo.total_anual)}</td></tr>`;
+    const formularioAnadir = seccion === "real" ? "" : `<form class="ct-anadir" data-ct-add="${seccion}">
+        <label for="ctNueva-${seccion}">Añadir categoría a ${titulo.toLowerCase()}</label>
+        <input id="ctNueva-${seccion}" name="nombre" type="text" maxlength="80" required
+          placeholder="Nombre de categoría">
+        <button class="btn" type="submit">Añadir categoría</button>
+      </form>`;
     return `<section class="tarjeta">
       <header><h2>${titulo}</h2><span class="subt">${nota}</span></header>
       <div class="ct-grid" role="region" aria-label="${titulo}, tabla mensual" tabindex="0">
@@ -162,12 +168,7 @@
           ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}<th scope="col">Total año</th>
         </tr></thead><tbody>${filas}${total}</tbody></table>
       </div>
-      <form class="ct-anadir" data-ct-add="${seccion}">
-        <label for="ctNueva-${seccion}">Añadir categoría a ${titulo.toLowerCase()}</label>
-        <input id="ctNueva-${seccion}" name="nombre" type="text" maxlength="80" required
-          placeholder="Nombre de categoría">
-        <button class="btn" type="submit">Añadir categoría</button>
-      </form>
+      ${formularioAnadir}
     </section>`;
   }
 

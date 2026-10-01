@@ -96,6 +96,7 @@ body[data-area-activa="contabilidad"] #btnPrecios{display:none}
 .ct-grafico-grupo .ct-grafico{min-height:180px}
 .ct-grafico-grupo .ct-leyenda{margin-top:4px}
 .ct-editor .vacio{margin:35px 8px;text-align:center;color:var(--tinta3);font-size:12px}
+.ct-comparacion{margin-top:12px}
 .ct-comparacion table{min-width:2050px}
 .ct-grid td.ct-presupuesto-mes{min-width:165px;text-align:left;white-space:normal}
 .ct-presupuesto-mes span,.ct-presupuesto-mes b{display:block}

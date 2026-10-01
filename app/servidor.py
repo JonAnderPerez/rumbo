@@ -228,6 +228,11 @@ def api_contabilidad_borrar(anio):
 def api_contabilidad_crear_categoria(anio, seccion):
     if seccion not in contabilidad.SECCIONES:
         return jsonify(ok=False, errores=["Esa sección de Contabilidad no existe."]), 404
+    if seccion == "real":
+        return jsonify(
+            ok=False,
+            errores=["No se pueden añadir categorías a «Presupuesto Real»."],
+        ), 400
     try:
         datos = datos_contabilidad()
         if set(datos) != {"id", "nombre"}:
