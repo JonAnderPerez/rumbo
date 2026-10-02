@@ -300,7 +300,7 @@
               ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}<th scope="col">Total año</th>
             </tr></thead><tbody>${resumenFilas}</tbody></table>
           </div>
-          <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Los meses sin registros no se tratan como cero: para calcular un subtotal mensual deben existir datos de ingresos, gastos y gastos de casa. El subtotal anual y su tasa usan los mismos meses completos. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
+          <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Para calcular el subtotal basta con que haya ingresos registrados: los gastos personales o de casa sin registrar se consideran 0. El subtotal y su tasa anual solo incluyen meses con ingresos registrados. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
         </section>
       </section>
       <section class="ct-panel" id="ctPanel-nomina" role="tabpanel" tabindex="0"

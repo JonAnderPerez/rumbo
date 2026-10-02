@@ -12,7 +12,7 @@
 
 - Selecciona **Contabilidad** desde el selector del appbar; crea o elige un ejercicio. Los datos se aíslan por año y se escriben en `PATRIMONIO_DATOS/contabilidad.json`, nunca en la cartera.
 - La configuración, las categorías y los importes persistidos están definidos/validados por `contabilidad.py`. Los resúmenes de `/api/contabilidad/<año>` se calculan al responder y no deben añadirse al fichero persistente.
-- Los importes vacíos son desconocidos/no registrados; el cero es explícito. Un subtotal mensual requiere datos en ingresos, gastos y casa. «Real» y «Ahorros» no se descuentan otra vez.
+- Los importes vacíos son desconocidos/no registrados; el cero es explícito. Para calcular el subtotal, basta con que los ingresos estén registrados; los gastos personales o de casa vacíos se consideran cero. «Real» y «Ahorros» no se descuentan otra vez.
 - Los guardados generan hasta 20 copias completas en `PATRIMONIO_DATOS/copias_contabilidad/`. No hay restauración desde la interfaz; con la app cerrada, la recuperación consiste en respaldar el archivo actual y reemplazarlo con una copia `auto_*.json`.
 - La nómina es una estimación basada en porcentajes configurables, no cálculo oficial ni asesoramiento fiscal. No se ofrece importación CSV/XLSX para Contabilidad.
 - El exportador incluye solo Mi Patrimonio y no debe incorporar el documento de Contabilidad ni sus datos.

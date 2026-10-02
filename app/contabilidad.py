@@ -660,23 +660,25 @@ def calcula(ejercicio):
     casa = secciones["casa"]["total_mensual"]
     subtotal_mensual = []
     for ingreso, gasto, gasto_casa in zip(ingresos, gastos, casa):
-        if ingreso is None or gasto is None or gasto_casa is None:
+        if ingreso is None:
             subtotal_mensual.append(None)
         else:
             subtotal_mensual.append(_dinero(
-                _decimal(ingreso) - _decimal(gasto) - _decimal(gasto_casa)
+                _decimal(ingreso)
+                - (_decimal(gasto) if gasto is not None else Decimal(0))
+                - (_decimal(gasto_casa) if gasto_casa is not None else Decimal(0))
             ))
     subtotal_anual = _suma_valores(subtotal_mensual)
-    ingresos_meses_completos = [
+    ingresos_meses_computables = [
         ingreso for ingreso, subtotal in zip(ingresos, subtotal_mensual)
         if subtotal is not None
     ]
-    ingresos_anual_completo = _suma_valores(ingresos_meses_completos)
+    ingresos_anual_computable = _suma_valores(ingresos_meses_computables)
     ahorro_mensual = [
         _porcentaje_de(subtotal, ingreso)
         for subtotal, ingreso in zip(subtotal_mensual, ingresos)
     ]
-    ahorro_anual = _porcentaje_de(subtotal_anual, ingresos_anual_completo)
+    ahorro_anual = _porcentaje_de(subtotal_anual, ingresos_anual_computable)
 
     neto_regular = metricas_nomina["neto_regular"]
     reglas_presupuesto = []
