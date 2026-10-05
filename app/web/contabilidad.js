@@ -345,6 +345,7 @@
           </div>
           <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Los gastos de casa sin registro se consideran 0; los meses sin datos de ingresos o gastos personales no se tratan como cero. El subtotal anual y su tasa usan los mismos meses completos. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
         </section>
+        ${tablas.real}
       </section>
       <section class="ct-panel" id="ctPanel-nomina" role="tabpanel" tabindex="0"
         aria-labelledby="ctTab-nomina" data-ct-panel="nomina" hidden>
@@ -396,7 +397,6 @@
           <p class="ct-nota">«Real» se calcula desde los movimientos de origen: esenciales incluyen vivienda (sin muebles/otros), transporte, alimentos y vehículos; estilo de vida incluye salud, vacaciones, ocio, cajero, otros y muebles/otros; caprichos corresponde a hobbies; emergencia e inversión suma los ahorros. Las devoluciones restan del grupo asociado.</p>
           <div class="ct-graficos-presupuesto">${comparacionGraficos}</div>
         </section>
-        ${tablas.real}
       </section>
       <section class="ct-panel" id="ctPanel-ahorros" role="tabpanel" tabindex="0"
         aria-labelledby="ctTab-ahorros" data-ct-panel="ahorros" hidden>
