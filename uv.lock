@@ -166,7 +166,7 @@ wheels = [
 
 [[package]]
 name = "rumbo"
-version = "1.2.2"
+version = "1.2.3"
 source = { virtual = "." }
 dependencies = [
     { name = "flask" },
