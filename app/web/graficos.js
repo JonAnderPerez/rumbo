@@ -747,8 +747,9 @@
       const filas = series.map(s => s.valores[i] == null ? "" :
         `<tr><td><i style="background:${s.color}"></i>${s.nombre}</td><td>${fV(s.valores[i])}</td></tr>`).join("");
       const total = series.reduce((a, s) => a + (s.valores[i] || 0), 0);
+      const totalHtml = cfg.mostrarTotal === false ? "" : `<div class="ttTotal">${fV(total)}</div>`;
       tt.innerHTML = `<b>${cfg.formatoCat ? cfg.formatoCat(cats[i]) : cats[i]}</b>` +
-        `<div class="ttTotal">${fV(total)}</div><table>${filas}</table>`;
+        `${totalHtml}<table>${filas}</table>`;
       tt.classList.add("on");
       colocaTooltip(tt, cont, (P.l + paso * i + paso / 2) * (r.width / W), ev.clientY - r.top);
     }

@@ -477,16 +477,32 @@
     pintaComparativas();
   }
 
+  function datosComparativa(resumen) {
+    const importe = valor => valor == null ? 0 : Number(valor);
+    const ingresos = importe(resumen.secciones.ingresos.total_anual);
+    const gastos = importe(resumen.secciones.gastos.total_anual);
+    const casa = importe(resumen.secciones.casa.total_anual);
+    const subtotal = ingresos - gastos - casa;
+    return {
+      ingresos,
+      gastos,
+      casa,
+      subtotal,
+      porcentajeAhorro: ingresos === 0 ? null : subtotal / ingresos * 100,
+    };
+  }
+
   function pintaComparativas() {
     const filas = estado.anios.map(anio => {
       const resumen = estado.resumenesAnuales.get(anio);
       if (!resumen) return "";
+      const datos = datosComparativa(resumen);
       return `<tr><th scope="row">${anio}</th>
-        <td>${euros(resumen.secciones.ingresos.total_anual)}</td>
-        <td>${euros(resumen.secciones.gastos.total_anual)}</td>
-        <td>${euros(resumen.secciones.casa.total_anual)}</td>
-        <td>${euros(resumen.subtotal_anual)}</td>
-        <td>${porcentaje(resumen.porcentaje_ahorro_anual)}</td></tr>`;
+        <td>${euros(datos.ingresos)}</td>
+        <td>${euros(datos.gastos)}</td>
+        <td>${euros(datos.casa)}</td>
+        <td>${euros(datos.subtotal)}</td>
+        <td>${porcentaje(datos.porcentajeAhorro)}</td></tr>`;
     }).join("");
     $("#ctComparativasFilas").innerHTML = filas;
     $("#ctComparativasEstado").textContent = estado.anios.length
@@ -499,20 +515,21 @@
     if (estado.vista !== "comparativas" || !window.G) return;
     const anios = estado.anios.filter(anio => estado.resumenesAnuales.has(anio));
     const resumenes = anios.map(anio => estado.resumenesAnuales.get(anio));
+    const datos = resumenes.map(datosComparativa);
     const colores = [G.css("--s1"), G.css("--s2"), G.css("--s3"), G.css("--s4")];
     const series = [
-      ["Ingresos", resumen => resumen.secciones.ingresos.total_anual],
-      ["Gastos personales", resumen => resumen.secciones.gastos.total_anual],
-      ["Gastos de casa", resumen => resumen.secciones.casa.total_anual],
-      ["Subtotal disponible", resumen => resumen.subtotal_anual],
-    ].map(([nombre, valor], indice) => ({
-      nombre, valores: resumenes.map(resumen => valor(resumen)), color: colores[indice],
+      ["Ingresos", "ingresos"],
+      ["Gastos personales", "gastos"],
+      ["Gastos de casa", "casa"],
+      ["Subtotal disponible", "subtotal"],
+    ].map(([nombre, campo], indice) => ({
+      nombre, valores: datos.map(resumen => resumen[campo]), color: colores[indice],
     }));
     const importes = $("#ctGrafComparativaImportes");
     if (importes.clientWidth > 0) {
       G.barrasAgrupadas(importes, {
         categorias: anios.map(String), alto: 250, formatoValor: G.fmtEur,
-        formatoY: G.fmtEurCorto, series,
+        formatoY: G.fmtEurCorto, mostrarTotal: false, series,
       });
     }
     const ahorro = $("#ctGrafComparativaAhorro");
@@ -520,7 +537,7 @@
       G.barrasAgrupadas(ahorro, {
         categorias: anios.map(String), alto: 250, formatoValor: porcentaje,
         formatoY: porcentaje, series: [{
-          nombre: "Ahorro", valores: resumenes.map(resumen => resumen.porcentaje_ahorro_anual),
+          nombre: "Ahorro", valores: datos.map(resumen => resumen.porcentajeAhorro),
           color: colores[3],
         }],
       });
