@@ -605,11 +605,12 @@
     const filas = [];
     D.productos.forEach(p => (p.aportaciones || []).forEach(a => {
       if (!a.importe) return;
+      const coste = a.costeRestante ?? a.importe;
       filas.push({
         fecha: a.fecha, producto: p.corto || p.nombre, color: color(p), id: p.id,
-        importe: a.importe, valor: a.valor,
-        pl: a.valor != null ? a.valor - a.importe : null,
-        rent: a.valor != null && a.importe ? (a.valor - a.importe) / a.importe : null,
+        importe: a.importe, coste, valor: a.valor,
+        pl: a.valor != null ? a.valor - coste : null,
+        rent: a.valor != null && coste > 0 ? (a.valor - coste) / coste : null,
       });
     }));
     const f = estado.tablaFiltro === "todos" ? filas : filas.filter(x => x.id === estado.tablaFiltro);
@@ -619,7 +620,8 @@
       const c = va == null ? -1 : vb == null ? 1 : va > vb ? 1 : va < vb ? -1 : 0;
       return o.desc ? -c : c;
     });
-    const cols = [["fecha", "Fecha"], ["producto", "Producto"], ["importe", "Aportado"],
+    const cols = [["fecha", "Fecha"], ["producto", "Producto"], ["importe", "Aportado inicial"],
+    ["coste", "Coste restante"],
     ["valor", "Vale hoy"], ["pl", "Plusvalía"], ["rent", "Rentabilidad"]];
     $("#tablaMov").innerHTML =
       `<thead><tr>${cols.map(c => `<th class="orden" data-c="${c[0]}">${c[1]}${o.col === c[0] ? (o.desc ? " ↓" : " ↑") : ""}</th>`).join("")}</tr></thead>
@@ -627,9 +629,10 @@
         <td>${G.fmtFecha(r.fecha)}</td>
         <td><i class="pt" style="background:${r.color}"></i>${r.producto}</td>
         <td>${G.fmtEur(r.importe)}</td>
+        <td>${G.fmtEur(r.coste)}</td>
         <td>${r.valor != null ? G.fmtEur(r.valor) : "—"}</td>
-        <td class="${r.pl >= 0 ? "pos" : "neg"}">${r.pl != null ? G.fmtEurSigno(r.pl) : "—"}</td>
-        <td class="${r.rent >= 0 ? "pos" : "neg"}">${r.rent != null ? G.fmtPctSigno(r.rent, 1) : "—"}</td>
+        <td class="${r.pl == null ? "" : r.pl >= 0 ? "pos" : "neg"}">${r.pl != null ? G.fmtEurSigno(r.pl) : "—"}</td>
+        <td class="${r.rent == null ? "" : r.rent >= 0 ? "pos" : "neg"}">${r.rent != null ? G.fmtPctSigno(r.rent, 1) : "—"}</td>
       </tr>`).join("")}</tbody>`;
     $("#tablaMov").querySelectorAll("th.orden").forEach(th => {
       th.onclick = () => {
@@ -639,7 +642,8 @@
       };
     });
     $("#notaTabla").textContent =
-      `${f.length} movimientos · ${G.fmtEur(f.reduce((a, r) => a + r.importe, 0), 0)}`;
+      `${f.length} aportaciones · coste restante ${G.fmtEur(f.reduce((a, r) => a + r.coste, 0), 0)}`
+      + ` de ${G.fmtEur(f.reduce((a, r) => a + r.importe, 0), 0)} aportados`;
   }
 
   function pintaPatrimonio() {
@@ -937,24 +941,26 @@
     const esFondo = p.tipoClave === "fondo" || p.tipoClave === "pension";
     const paleta = tonos(color(p));
     const hoy = new Date(D.fechaExtracto);
-    const cab = ["Fecha", "Aportado", p.etqUnidades || "Participaciones",
+    const cab = ["Fecha", "Aportado inicial", "Coste restante", "Unidades restantes",
       esFondo ? "VL de compra" : "Precio de compra", "Vale hoy", "Plusvalía", "Rent.", "Días"];
     sec.innerHTML = `<header><h2>Aportaciones a este producto</h2>
         <span class="subt">${filas.length} en total · ${G.fmtEur(p.aportado, 0)}</span></header>
       <div class="tablaEnv alto"><table class="dt">
         <thead><tr>${cab.map(c => `<th>${c}</th>`).join("")}</tr></thead>
         <tbody>${filas.map(a => {
-          const pl = a.valor != null ? a.valor - a.importe : null;
-          const rt = pl != null && a.importe ? pl / a.importe : null;
+          const coste = a.costeRestante ?? a.importe;
+          const pl = a.valor != null ? a.valor - coste : null;
+          const rt = pl != null && coste > 0 ? pl / coste : null;
           const dias = Math.round((hoy - new Date(a.fecha)) / 864e5);
           const niv = a.nivel == null ? 1 : a.nivel;
           return `<tr><td>${G.fmtFecha(a.fecha)}</td>
             <td><i class="pt" style="background:${paleta[niv]}"></i>${G.fmtEur(a.importe)}</td>
-            <td>${G.nfNum.format(a.participaciones || 0)}</td>
+            <td>${G.fmtEur(coste)}</td>
+            <td>${G.nfNum.format(a.participacionesRestantes ?? a.participaciones ?? 0)}</td>
             <td>${a.precio != null ? G.fmtEur(a.precio) : "—"}</td>
             <td>${a.valor != null ? G.fmtEur(a.valor) : "—"}</td>
-            <td class="${pl >= 0 ? "pos" : "neg"}">${pl != null ? G.fmtEurSigno(pl) : "—"}</td>
-            <td class="${rt >= 0 ? "pos" : "neg"}">${rt != null ? G.fmtPctSigno(rt, 1) : "—"}</td>
+            <td class="${pl == null ? "" : pl >= 0 ? "pos" : "neg"}">${pl != null ? G.fmtEurSigno(pl) : "—"}</td>
+            <td class="${rt == null ? "" : rt >= 0 ? "pos" : "neg"}">${rt != null ? G.fmtPctSigno(rt, 1) : "—"}</td>
             <td>${dias}</td></tr>`;
         }).join("")}</tbody></table></div>`;
   }

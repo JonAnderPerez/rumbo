@@ -471,19 +471,21 @@ def clave_serie(p):
 def aplicar_movimientos(p, movs):
     """
     Recorre los movimientos de un producto por fecha. Las ventas descuentan el coste
-    por FIFO y reconocen su plusvalia; los traspasos descuentan el importe indicado de
-    "aportado" sin reconocer beneficio realizado.
+    por FIFO y reconocen su plusvalia; los traspasos descuentan las unidades y su coste
+    por FIFO, pero conservan como flujo el valor de mercado indicado en el movimiento.
 
     Devuelve eventos (fecha, +-unidades, +-aportado) para las series diarias y flujos
     (fecha, importe) para la TIR, en negativo lo que sale de tu cuenta.
     """
-    lotes, eventos, flujos, vendidas = [], [], [], set()
+    lotes, eventos, flujos, saldos_lotes = [], [], [], {}
     realizado = comisiones = 0.0
     for m in sorted(movs, key=lambda x: (x["fecha"], ORDEN_TIPO.get(x.get("tipo"), 9))):
         f, t = m["fecha"], m.get("tipo")
         u, imp = float(m.get("unidades") or 0), float(m.get("importe") or 0)
         if t == "compra":
-            lotes.append([u, imp, id(m)])
+            ref = id(m)
+            lotes.append([u, imp, ref])
+            saldos_lotes[ref] = (u, imp)
             eventos.append((f, u, imp))
             flujos.append((f, -imp))
             comisiones += float(m.get("comision") or 0)
@@ -495,8 +497,8 @@ def aplicar_movimientos(p, movs):
                 parte = lc * toma / lu if lu else 0.0
                 coste += parte
                 quedan -= toma
-                vendidas.add(ref)
                 lotes[0] = [lu - toma, lc - parte, ref]
+                saldos_lotes[ref] = (max(0.0, lotes[0][0]), max(0.0, lotes[0][1]))
                 if lotes[0][0] <= 1e-9:
                     lotes.pop(0)
             if quedan > 1e-6:
@@ -505,26 +507,20 @@ def aplicar_movimientos(p, movs):
             eventos.append((f, -(u - quedan), -coste))
             flujos.append((f, imp))
         elif t == "traspaso":
-            base_antes = sum(lote[1] for lote in lotes)
-            quedan = u
+            quedan, coste = u, 0.0
             while quedan > 1e-9 and lotes:
                 lu, lc, ref = lotes[0]
                 toma = min(lu, quedan)
                 parte = lc * toma / lu if lu else 0.0
+                coste += parte
                 quedan -= toma
-                vendidas.add(ref)
                 lotes[0] = [lu - toma, lc - parte, ref]
+                saldos_lotes[ref] = (max(0.0, lotes[0][0]), max(0.0, lotes[0][1]))
                 if lotes[0][0] <= 1e-9:
                     lotes.pop(0)
             if quedan > 1e-6:
                 aviso(f"{p['corto']}: el {f} traspasas más unidades de las que tienes. Revisa sus movimientos.")
-            # El importe es el coste que se retira de la cartera, no un precio de venta.
-            base_restante = sum(lote[1] for lote in lotes)
-            if base_restante > 1e-9:
-                factor = max(0.0, (base_antes - imp) / base_restante)
-                for lote in lotes:
-                    lote[1] *= factor
-            eventos.append((f, -(u - quedan), -imp))
+            eventos.append((f, -(u - quedan), -coste))
             flujos.append((f, imp))
             comisiones += float(m.get("comision") or 0)
         elif t == "dividendo":
@@ -535,7 +531,7 @@ def aplicar_movimientos(p, movs):
             comisiones += imp
             flujos.append((f, -imp))
     return {"eventos": eventos, "flujos": flujos, "realizado": realizado, "comisiones": comisiones,
-            "vendidas": vendidas}
+            "saldosLotes": saldos_lotes}
 
 
 def descarga_series(productos_cfg, series=None):
@@ -698,12 +694,15 @@ def construir(cfg, carpeta, descargar=True):
                     continue
                 u, imp = float(m.get("unidades") or 0), float(m.get("importe") or 0)
                 com = float(m.get("comision") or 0)
+                unidades_restantes, coste_restante = mv["saldosLotes"].get(id(m), (0.0, 0.0))
                 p["aportaciones"].append({
                     "fecha": m["fecha"], "importe": round(imp, 2),
                     "participaciones": round(u, 6), "precio": r4((imp - com) / u) if u else None,
                     "comision": com, "tipoOrden": m.get("nota") or None,
-                    # De una compra ya vendida (toda o en parte) no se enseña "cuánto vale hoy".
-                    "valor": None if id(m) in mv["vendidas"] else round(u * nav_hoy, 2),
+                    "participacionesRestantes": round(unidades_restantes, 6),
+                    "costeRestante": round(coste_restante, 2),
+                    "valor": round(unidades_restantes * nav_hoy, 2)
+                    if unidades_restantes > 1e-9 else None,
                 })
         else:
             p["origen"] = "manual"

@@ -12,7 +12,7 @@ import os
 import re
 import unicodedata
 
-from .motor import TIPOS, FUENTES, aplicar_movimientos, num_es
+from .motor import TIPOS, FUENTES, num_es
 
 COPIAS_MAX = 20
 TIPOS_MOV = {"compra": "Compra", "venta": "Venta", "traspaso": "Traspaso",
@@ -262,15 +262,6 @@ def guarda_movimiento(cfg, datos):
             operacion = "traspasando" if tipo == "traspaso" else "vendiendo"
             errores.append(f"El {fmt_fecha(f)} solo tenías {fmt_num(tenias)} unidades de "
                            f"«{p.get('corto') or p['nombre']}» y estás {operacion} {fmt_num(unidades)}.")
-    if not errores and tipo == "traspaso":
-        anteriores = [m for m in cfg.get("movimientos", [])
-                      if m.get("producto") == p["id"] and m.get("id") != datos.get("id") and m["fecha"] <= f]
-        aportado = sum(evento[2] for evento in aplicar_movimientos(p, anteriores)["eventos"])
-        if importe > aportado + 0.01:
-            errores.append(f"El importe del traspaso ({fmt_num(importe)} €) supera los "
-                           f"{fmt_num(max(0.0, aportado))} € que quedan aportados en «{p.get('corto') or p['nombre']}».")
-        elif tenias is not None and unidades >= tenias - 1e-6 and abs(importe - aportado) > 0.01:
-            errores.append("Al traspasar todas las unidades, el importe debe coincidir con todo lo aportado.")
     if errores:
         raise ErrorValidacion(errores)
 

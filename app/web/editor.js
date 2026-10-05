@@ -393,7 +393,7 @@
   const AYUDA_IMPORTE = {
     compra: "Lo que salió de tu cuenta, con las comisiones incluidas.",
     venta: "Lo que te ingresaron, ya descontadas las comisiones.",
-    traspaso: "Coste que retiras del total aportado al transferir estas unidades; no cuenta como venta ni genera beneficio realizado.",
+    traspaso: "Valor de mercado de estas unidades en la fecha del traspaso. No es una venta ni realiza plusvalía; su coste histórico se retira por FIFO.",
     dividendo: "Lo que te ingresaron por el dividendo o el cupón.",
     comision: "Comisiones sueltas, como la de custodia. Las de compra y venta ya van dentro de su importe.",
   };
