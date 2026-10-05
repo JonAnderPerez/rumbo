@@ -72,6 +72,9 @@ body[data-area-activa="contabilidad"] #ctGuardar{display:inline-flex}
 .ct-grid td input{width:86px;text-align:right;padding:6px 7px}
 .ct-grid td input.ct-importe{width:92px}
 .ct-grid td.ct-calculado,.ct-grid td.ct-anual{font-variant-numeric:tabular-nums}
+.ct-grid .ct-positivo{color:var(--bien);font-weight:700}
+.ct-grid .ct-aviso{color:var(--aviso);font-weight:700}
+.ct-grid .ct-negativo{color:var(--mal);font-weight:700}
 .ct-grid .ct-total th,.ct-grid .ct-total td{background:var(--sup2);font-weight:700}
 .ct-grid .ct-total th{position:sticky;left:0;text-align:left}
 .ct-grid .ct-total td{border-top:1px solid var(--eje)}

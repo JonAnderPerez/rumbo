@@ -65,6 +65,24 @@
   const porcentaje = valor => valor == null ? "—" :
     `${Number(valor).toLocaleString("es-ES", { maximumFractionDigits: 2 })} %`;
 
+  function claseIndicadorAnual(valor, tipo) {
+    if (valor == null || !Number.isFinite(Number(valor))) return "";
+    const numero = Number(valor);
+    if (tipo === "porcentaje") {
+      return numero >= 30 ? "ct-positivo" : numero >= 20 ? "ct-aviso" : "ct-negativo";
+    }
+    return numero < 0 ? "ct-negativo" : numero > 0 ? "ct-positivo" : "";
+  }
+
+  function claseRealPresupuesto(real, objetivo, esAhorro) {
+    if (real == null || objetivo == null ||
+        !Number.isFinite(Number(real)) || !Number.isFinite(Number(objetivo))) return "";
+    const dentroDelObjetivo = esAhorro
+      ? Number(real) >= Number(objetivo)
+      : Number(real) <= Number(objetivo);
+    return dentroDelObjetivo ? "ct-positivo" : "ct-negativo";
+  }
+
   function muestraPestana(id) {
     const seleccionada = pestanas.find(pestana => pestana.dataset.ctTab === id);
     if (!seleccionada) return;
@@ -139,12 +157,16 @@
     botonGuardar.disabled = bloqueada || !estado.ejercicio || !window.CONTABILIDAD_SUCIO;
   }
 
-  function celdaImporte(categoria, mes, seccion, resumen) {
+  function celdaImporte(categoria, mes, seccion, resumen, reglaPresupuesto) {
     const calculada = categoria.tipo !== "manual" ||
       (seccion === "real" && categoriasRealCalculadas.has(categoria.id));
     if (calculada) {
       const valor = resumen.categorias[categoria.id].mensual[mes];
-      return `<td class="ct-calculado" aria-label="Importe calculado: ${euros(valor)}">${euros(valor)}</td>`;
+      const clase = reglaPresupuesto
+        ? claseRealPresupuesto(valor, reglaPresupuesto.objetivo_mensual,
+          reglaPresupuesto.categoria_real_id === "emergencia_inversion")
+        : "";
+      return `<td class="ct-calculado ${clase}" aria-label="Importe calculado: ${euros(valor)}">${euros(valor)}</td>`;
     }
     const valor = categoria.valores[mes] == null ? "" : formato(categoria.valores[mes]);
     return `<td><input class="ct-importe" type="text" inputmode="decimal"
@@ -153,22 +175,33 @@
       placeholder="—"></td>`;
   }
 
-  function tablaSeccion(seccion, titulo, ejercicio, calculo) {
+  function tablaSeccion(seccion, titulo, ejercicio, calculo, reglasPresupuesto) {
     const categorias = ejercicio.secciones[seccion].categorias;
     const nota = seccion === "ingresos"
       ? "La nómina bruta y neta se calculan desde la configuración salarial; los importes mensuales importados se guardan como datos manuales de ese ejercicio."
       : seccion === "real"
         ? "Las cuatro asignaciones iniciales se derivan de los gastos, devoluciones y ahorros; se muestran como solo lectura."
         : "Importes en euros; deja vacío un mes sin registrar.";
-    const filas = categorias.map(categoria => `<tr>
-      <td class="ct-nombre">
-        <input type="text" data-ct-name="${seccion}" data-ct-category="${limpio(categoria.id)}"
-          value="${limpio(categoria.nombre)}" aria-label="Nombre de categoría: ${limpio(categoria.nombre)}"
-          maxlength="80">
-      </td>
-      ${meses.map((_, mes) => celdaImporte(categoria, mes, seccion, calculo)).join("")}
-      <td class="ct-anual">${euros(calculo.categorias[categoria.id].anual)}</td>
-    </tr>`).join("");
+    const filas = categorias.map(categoria => {
+      const regla = seccion === "real"
+        ? reglasPresupuesto.find(item => item.categoria_real_id === categoria.id)
+        : null;
+      const esAhorro = regla?.categoria_real_id === "emergencia_inversion";
+      const anual = calculo.categorias[categoria.id].anual;
+      const claseAnual = regla
+        ? claseRealPresupuesto(anual, regla.objetivo_anual, esAhorro) : "";
+      return `<tr>
+        <td class="ct-nombre">
+          <input type="text" data-ct-name="${seccion}" data-ct-category="${limpio(categoria.id)}"
+            value="${limpio(categoria.nombre)}" aria-label="Nombre de categoría: ${limpio(categoria.nombre)}"
+            maxlength="80">
+        </td>
+        ${meses.map((_, mes) =>
+          celdaImporte(categoria, mes, seccion, calculo, regla)
+        ).join("")}
+        <td class="ct-anual ${claseAnual}">${euros(anual)}</td>
+      </tr>`;
+    }).join("");
     const total = `<tr class="ct-total"><th scope="row">${
       seccion === "ingresos" ? "Total ingresos computables" : `Total ${titulo.toLowerCase()}`
     }</th>${calculo.total_mensual.map(valor => `<td>${euros(valor)}</td>`).join("")}
@@ -255,9 +288,17 @@
       ["Subtotal disponible", resumen.subtotal_mensual, resumen.subtotal_anual, "dinero"],
       ["Porcentaje de ahorro", resumen.porcentaje_ahorro_mensual,
         resumen.porcentaje_ahorro_anual, "porcentaje"],
-    ].map(([etiqueta, valores, anual, tipo]) => `<tr><th scope="row">${etiqueta}</th>
-      ${valores.map(valor => `<td>${tipo === "porcentaje" ? porcentaje(valor) : euros(valor)}</td>`).join("")}
-      <td class="ct-anual">${tipo === "porcentaje" ? porcentaje(anual) : euros(anual)}</td></tr>`).join("");
+    ].map(([etiqueta, valores, anual, tipo]) => {
+      const usaColor = etiqueta === "Subtotal disponible" || tipo === "porcentaje";
+      return `<tr><th scope="row">${etiqueta}</th>
+      ${valores.map(valor => {
+        const clase = usaColor
+          ? claseIndicadorAnual(valor, tipo) : "";
+        return `<td class="${clase}">${tipo === "porcentaje" ? porcentaje(valor) : euros(valor)}</td>`;
+      }).join("")}
+      <td class="ct-anual ${usaColor ? claseIndicadorAnual(anual, tipo) : ""}">
+        ${tipo === "porcentaje" ? porcentaje(anual) : euros(anual)}</td></tr>`;
+    }).join("");
     const colores = [G.css("--s1"), G.css("--s2"), G.css("--s3"), G.css("--s4")];
     const leyenda = elementos => `<ul class="ct-leyenda">${elementos.map(item =>
       `<li><span style="background:${item.color}"></span>${limpio(item.nombre)}</li>`
@@ -275,7 +316,9 @@
       </figure>`;
     }).join("");
     const tablas = Object.fromEntries(secciones.map(([clave, titulo]) =>
-      [clave, tablaSeccion(clave, titulo, ejercicio, resumen.secciones[clave])]
+      [clave, tablaSeccion(
+        clave, titulo, ejercicio, resumen.secciones[clave], resumen.presupuesto.reglas
+      )]
     ));
 
     editor.innerHTML = `<div class="ct-editor">
@@ -300,7 +343,7 @@
               ${meses.map(mes => `<th scope="col">${mes}</th>`).join("")}<th scope="col">Total año</th>
             </tr></thead><tbody>${resumenFilas}</tbody></table>
           </div>
-          <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Los meses sin registros no se tratan como cero: para calcular un subtotal mensual deben existir datos de ingresos, gastos y gastos de casa. El subtotal anual y su tasa usan los mismos meses completos. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
+          <p class="ct-nota">Porcentaje de ahorro = subtotal ÷ ingresos computables × 100; no se calcula si los ingresos son cero. Los gastos de casa sin registro se consideran 0; los meses sin datos de ingresos o gastos personales no se tratan como cero. El subtotal anual y su tasa usan los mismos meses completos. «Real» y «Ahorros» se muestran aparte y no se restan de nuevo.</p>
         </section>
       </section>
       <section class="ct-panel" id="ctPanel-nomina" role="tabpanel" tabindex="0"

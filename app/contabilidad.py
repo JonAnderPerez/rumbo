@@ -660,11 +660,12 @@ def calcula(ejercicio):
     casa = secciones["casa"]["total_mensual"]
     subtotal_mensual = []
     for ingreso, gasto, gasto_casa in zip(ingresos, gastos, casa):
-        if ingreso is None or gasto is None or gasto_casa is None:
+        if ingreso is None or gasto is None:
             subtotal_mensual.append(None)
         else:
+            gasto_casa = Decimal(0) if gasto_casa is None else _decimal(gasto_casa)
             subtotal_mensual.append(_dinero(
-                _decimal(ingreso) - _decimal(gasto) - _decimal(gasto_casa)
+                _decimal(ingreso) - _decimal(gasto) - gasto_casa
             ))
     subtotal_anual = _suma_valores(subtotal_mensual)
     ingresos_meses_completos = [
