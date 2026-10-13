@@ -894,12 +894,17 @@ def construir(cfg, carpeta, descargar=True):
     tot_otros, ser_otros = suma_manual(otros, 1)
     tot_pasivos, ser_pasivos = suma_manual(pasivos, -1)
 
-    serie_total, serie_ap_total = [], []
+    serie_total, serie_sin_efectivo, serie_ap_total = [], [], []
     for i in range(n):
         s = sum((p["serie"][i] or 0) for p in productos)
+        s_sin_efectivo = s
         for e in ser_otros + ser_pasivos:
-            s += e["serie"][i] or 0
+            v = e["serie"][i] or 0
+            s += v
+            if e.get("tipoClave") != "efectivo":
+                s_sin_efectivo += v
         serie_total.append(round(s, 2))
+        serie_sin_efectivo.append(round(s_sin_efectivo, 2))
         serie_ap_total.append(round(sum((p["serieAportado"][i] or 0) for p in productos), 2))
 
     patrimonio = round(serie_total[-1], 2)
@@ -965,7 +970,7 @@ def construir(cfg, carpeta, descargar=True):
 
     # maxima caida del patrimonio
     pico, dd_max, dd_fecha = 0.0, 0.0, None
-    for i, v in enumerate(serie_total):
+    for i, v in enumerate(serie_sin_efectivo):
         pico = max(pico, v)
         if pico > 0:
             caida = v / pico - 1
@@ -1187,7 +1192,7 @@ def construir(cfg, carpeta, descargar=True):
 
         v0, v1 = suma(ant), suma(i_fin)
         ap = sum(flujo_dia[i] for i in idxs)
-        nuevos, detalle = 0.0, {}
+        nuevos, variacion_efectivo, detalle = 0.0, 0.0, {}
         for p in todos_p:
             s = p["serie"]
             pv0 = (s[ant] or 0) if ant >= 0 else 0.0
@@ -1198,13 +1203,19 @@ def construir(cfg, carpeta, descargar=True):
             estrena = (ant < 0 or s[ant] is None) and s[i_fin] is not None
             pnuevo = pv1 if (estrena and p.get("aportado") is None) else 0.0
             nuevos += pnuevo
+            es_efectivo = p.get("tipoClave") == "efectivo"
+            variacion = pv1 - pv0 if es_efectivo and not estrena else 0.0
+            variacion_efectivo += variacion
+            mercado = 0.0 if es_efectivo else pv1 - pv0 - pap - pnuevo
             if pv1 or pv0 or pap:
                 detalle[p["id"]] = {"inicio": r2(pv0), "fin": r2(pv1), "aportado": r2(pap),
-                                    "nuevo": r2(pnuevo), "mercado": r2(pv1 - pv0 - pap - pnuevo)}
+                                    "nuevo": r2(pnuevo), "mercado": r2(mercado),
+                                    "variacionEfectivo": r2(variacion)}
         b = idx_cartera[ant] if ant >= 0 else idx_cartera[i_ini]
         resumen_mensual.append({
             "mes": mes, "inicio": r2(v0), "fin": r2(v1), "aportado": r2(ap),
-            "nuevo": r2(nuevos), "mercado": r2(v1 - v0 - ap - nuevos),
+            "nuevo": r2(nuevos), "mercado": r2(v1 - v0 - ap - nuevos - variacion_efectivo),
+            "variacionEfectivo": r2(variacion_efectivo),
             "rentabilidad": r4(idx_cartera[i_fin] / b - 1) if b else None,
             "porProducto": detalle,
         })

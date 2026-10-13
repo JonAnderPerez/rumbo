@@ -234,26 +234,37 @@
     const n = D.fechas.length;
     const serie = new Array(n).fill(0);
     const serieAp = new Array(n).fill(0);
-    let valor = 0, aportado = 0, valorConCoste = 0, valorTir = 0, nAp = 0;
+    const serieSinEfectivo = new Array(n).fill(0);
+    const serieApSinEfectivo = new Array(n).fill(0);
+    let valor = 0, valorSinEfectivo = 0, valorEfectivo = 0;
+    let aportado = 0, valorConCoste = 0, valorTir = 0, nAp = 0;
     const flujos = [];
 
     lista.forEach(p => {
       const s = p.serie || [], sa = p.serieAportado || [];
+      const esEfectivo = p.tipoClave === "efectivo";
       for (let i = 0; i < n; i++) {
         if (s[i] != null) serie[i] += s[i];
         if (sa[i] != null) serieAp[i] += sa[i];
+        if (!esEfectivo) {
+          if (s[i] != null) serieSinEfectivo[i] += s[i];
+          if (sa[i] != null) serieApSinEfectivo[i] += sa[i];
+        }
       }
-      valor += valorDe(p);
-      if (p.aportado != null && p.aportado > 0) {
+      const valorProducto = valorDe(p);
+      valor += valorProducto;
+      if (esEfectivo) valorEfectivo += valorProducto;
+      else valorSinEfectivo += valorProducto;
+      if (!esEfectivo && p.aportado != null && p.aportado > 0) {
         aportado += p.aportado;
-        valorConCoste += valorDe(p);
+        valorConCoste += valorProducto;
         nAp += (p.aportaciones || []).filter(a => a.importe).length;
       }
       // La TIR usa todo el dinero que entró y salió (compras, ventas, dividendos y
       // comisiones), y solo el valor de los productos que tienen esos movimientos.
-      if (p.flujos && p.flujos.length) {
+      if (!esEfectivo && p.flujos && p.flujos.length) {
         p.flujos.forEach(([f, v]) => flujos.push({ t: Date.parse(f), v }));
-        valorTir += valorDe(p);
+        valorTir += valorProducto;
       }
     });
 
@@ -282,18 +293,18 @@
 
     let pico = 0, caida = 0, caidaFecha = null;
     for (let i = 0; i < n; i++) {
-      pico = Math.max(pico, serie[i]);
+      pico = Math.max(pico, serieSinEfectivo[i]);
       if (pico > 0) {
-        const c = serie[i] / pico - 1;
+        const c = serieSinEfectivo[i] / pico - 1;
         if (c < caida) { caida = c; caidaFecha = D.fechas[i]; }
       }
     }
 
     return {
-      valor, aportado, valorConCoste, plusvalia,
+      valor, valorSinEfectivo, valorEfectivo, aportado, valorConCoste, plusvalia,
       rentabilidad: aportado ? plusvalia / aportado : null,
       tir, numAportaciones: nAp, ritmo, racha, caida, caidaFecha,
-      serie, serieAportado: serieAp,
+      serie, serieAportado: serieAp, serieSinEfectivo, serieApSinEfectivo,
     };
   }
 
@@ -443,7 +454,7 @@
       { e: "TIR anualizada", v: G.fmtPctSigno(m.tir), n: "rentabilidad real del dinero", cl: m.tir >= 0 ? "pos" : "neg" },
       { e: "Ritmo mensual", v: G.fmtEur(m.ritmo, 0), n: "media de los últimos 12 meses" },
       { e: "Racha", v: m.racha + (m.racha === 1 ? " mes" : " meses"), n: "aportando sin fallar" },
-      { e: "Peor caída", v: G.fmtPctSigno(m.caida), n: m.caidaFecha ? "del patrimonio, el " + G.fmtFecha(m.caidaFecha) : "", cl: "neg" },
+      { e: "Peor caída", v: G.fmtPctSigno(m.caida), n: m.caidaFecha ? "de la cartera sin efectivo, el " + G.fmtFecha(m.caidaFecha) : "", cl: "neg" },
     ];
     $("#kpis").innerHTML = kpis.map(k =>
       `<div class="kpi"><div class="e">${k.e}</div>
@@ -455,6 +466,7 @@
   function pintaPrincipal(m) {
     const fechas = corta(D.fechas);
     const prods = visibles().filter(p => (p.serie || []).some(v => v));
+    const tieneEfectivo = visibles().some(p => p.tipoClave === "efectivo");
     const cont = $("#grafPrincipal");
     let nota = "";
 
@@ -463,11 +475,12 @@
         fechas, valores: corta(m.serie), color: G.css("--s1"), alto: 330,
         overlay: { nombre: "Aportado", valores: corta(m.serieAportado) },
       });
+      if (tieneEfectivo) nota = "El total incluye el efectivo; su variación no cuenta como rentabilidad.";
     } else if (estado.vista === "dinero") {
       // Lo que pusiste tú contra lo que ha puesto el mercado.
-      const tuyo = m.serie.map((v, i) => Math.min(m.serieAportado[i], v));
-      const mercado = m.serie.map((v, i) => Math.max(0, v - m.serieAportado[i]));
-      const bajoCoste = m.serie.some((v, i) => v > 0 && v < m.serieAportado[i] - 0.01);
+      const tuyo = m.serieSinEfectivo.map((v, i) => Math.min(m.serieApSinEfectivo[i], v));
+      const mercado = m.serieSinEfectivo.map((v, i) => Math.max(0, v - m.serieApSinEfectivo[i]));
+      const bajoCoste = m.serieSinEfectivo.some((v, i) => v > 0 && v < m.serieApSinEfectivo[i] - 0.01);
       G.areaApilada(cont, {
         fechas, alto: 330,
         series: [
@@ -476,8 +489,8 @@
         ],
       });
       nota = bajoCoste
-        ? "Hubo días por debajo de lo aportado: ahí la banda verde desaparece."
-        : "La banda verde es rentabilidad, no dinero tuyo.";
+        ? "Hubo días por debajo de lo aportado: ahí la banda verde desaparece. El efectivo no cuenta como rentabilidad."
+        : "La banda verde es rentabilidad, no dinero tuyo; el efectivo queda fuera.";
     } else if (estado.vista === "reparto") {
       const series = prods.map(p => ({ id: p.id, nombre: p.corto || p.nombre, color: color(p), valores: corta(p.serie) }));
       const tot = fechas.map((_, i) => series.reduce((a, s) => a + (s.valores[i] || 0), 0));
@@ -497,6 +510,10 @@
       if (tardios.length) {
         nota = tardios.map(p => p.corto).join(", ") + (tardios.length > 1 ? " entran" : " entra") +
           " en el seguimiento el " + G.fmtFecha(tardios[0].desde);
+      }
+      if (tieneEfectivo) {
+        nota = [nota, "El efectivo está incluido en el patrimonio, pero no cuenta como rentabilidad."]
+          .filter(Boolean).join(" ");
       }
     }
     $("#evolNota").textContent = nota;
@@ -579,11 +596,12 @@
     const rm = rent / 12, n = anos * 12;
     const fechas = [], valores = [], aportado = [];
     const base = new Date(D.fechaExtracto);
-    let v = m.valor, ap = m.aportado;
+    const efectivo = m.valorEfectivo;
+    let v = m.valorSinEfectivo, ap = m.aportado;
     for (let i = 0; i <= n; i++) {
       const f = new Date(base.getFullYear(), base.getMonth() + i, 1);
       fechas.push(f.toISOString().slice(0, 10));
-      valores.push(Math.round(v));
+      valores.push(Math.round(v + efectivo));
       aportado.push(Math.round(ap));
       v = v * (1 + rm) + apor;
       ap += apor;
@@ -598,7 +616,8 @@
        en <b class="fuerte">${anos} años</b> tendrías <b class="fuerte">${G.fmtEur(fin, 0)}</b>
        <span style="color:var(--tinta3)">·</span> habrías aportado ${G.fmtEur(apFin, 0)}
        <span style="color:var(--tinta3)">·</span> el mercado pondría
-       <span class="pos fuerte">${G.fmtEur(fin - apFin, 0)}</span>`;
+       <span class="pos fuerte">${G.fmtEur(fin - apFin - efectivo, 0)}</span>
+       ${efectivo ? `<span style="color:var(--tinta3)">·</span> el efectivo (${G.fmtEur(efectivo, 0)}) no se revaloriza` : ""}`;
   }
 
   function pintaTabla() {
@@ -692,10 +711,9 @@
     $("#mesNext").disabled = estado.mes === rm.length - 1;
 
     const cambio = r.fin - r.inicio;
-    // El titular es el cambio REAL: lo que aportaste mas lo que hizo el mercado.
-    // Incorporar una cuenta al panel mueve el saldo pero no es dinero ganado,
-    // asi que va aparte y no infla la cifra grande.
-    const real = r.aportado + r.mercado;
+    // Separa la variacion de efectivo del mercado: el gasto cambia el saldo,
+    // pero no es una perdida de rentabilidad.
+    const real = r.aportado + r.mercado + (r.variacionEfectivo || 0);
     const ultimo = estado.mes === rm.length - 1;
     $("#mesEtq").textContent = ultimo ? "Cambio en lo que va de mes" : "Cambio del mes";
     $("#mesCifra").textContent = G.fmtEurSigno(real);
@@ -719,6 +737,12 @@
         c: G.css("--s3"), cl: r.mercado >= 0 ? "pos" : "neg"
       },
     ];
+    const hayEfectivo = TODOS().some(p => p.tipoClave === "efectivo");
+    if (hayEfectivo) tarjetas.push({
+      e: "Variación del efectivo", v: G.fmtEurSigno(r.variacionEfectivo || 0),
+      n: "no cuenta como rentabilidad", c: G.css("--tinta3"),
+      cl: (r.variacionEfectivo || 0) >= 0 ? "pos" : "neg"
+    });
     if (r.nuevo) tarjetas.push({
       e: "Nuevo en el panel", v: G.fmtEur(r.nuevo, 0),
       n: "no es dinero nuevo: es que empiezas a seguirlo", c: G.css("--s7")
@@ -733,21 +757,23 @@
     const colNuevo = hayNuevo ? "<th>Entra al panel</th>" : "";
     $("#mesTabla").innerHTML =
       `<thead><tr><th>Componente</th><th>Al empezar</th><th>Aportaste</th>
-        <th>Mercado</th>${colNuevo}<th>Al cerrar</th><th>Variación</th></tr></thead>
+        <th>Mercado</th>${hayEfectivo ? "<th>Variación del efectivo</th>" : ""}${colNuevo}<th>Al cerrar</th><th>Variación</th></tr></thead>
        <tbody>${filas.map(({ p, d }) => {
         const var_ = d.fin - d.inicio;
         return `<tr>
           <td><i class="pt" style="background:${color(p)}"></i>${p.corto || p.nombre}</td>
           <td>${G.fmtEur(d.inicio)}</td>
           <td>${d.aportado ? G.fmtEur(d.aportado) : "—"}</td>
-          <td class="${d.mercado >= 0 ? "pos" : "neg"}">${G.fmtEurSigno(d.mercado)}</td>
+          <td class="${p.tipoClave === "efectivo" ? "" : d.mercado >= 0 ? "pos" : "neg"}">${p.tipoClave === "efectivo" ? "—" : G.fmtEurSigno(d.mercado)}</td>
+          ${hayEfectivo ? `<td>${p.tipoClave === "efectivo" ? G.fmtEurSigno(d.variacionEfectivo || 0) : "—"}</td>` : ""}
           ${hayNuevo ? `<td>${d.nuevo ? G.fmtEur(d.nuevo) : "—"}</td>` : ""}
           <td>${G.fmtEur(d.fin)}</td>
           <td class="${var_ >= 0 ? "pos" : "neg"}">${G.fmtEurSigno(var_)}</td></tr>`;
       }).join("")}</tbody>
        <tfoot><tr><td>Total</td><td>${G.fmtEur(r.inicio)}</td><td>${G.fmtEur(r.aportado)}</td>
         <td class="${r.mercado >= 0 ? "pos" : "neg"}">${G.fmtEurSigno(r.mercado)}</td>
-        ${hayNuevo ? `<td>${G.fmtEur(r.nuevo)}</td>` : ""}
+       ${hayEfectivo ? `<td>${G.fmtEurSigno(r.variacionEfectivo || 0)}</td>` : ""}
+       ${hayNuevo ? `<td>${G.fmtEur(r.nuevo)}</td>` : ""}
         <td>${G.fmtEur(r.fin)}</td>
         <td class="${cambio >= 0 ? "pos" : "neg"}">${G.fmtEurSigno(cambio)}</td></tr></tfoot>`;
     $("#mesTablaNota").textContent = r.nuevo

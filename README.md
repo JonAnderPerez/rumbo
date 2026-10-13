@@ -335,7 +335,7 @@ Los fondos publican su valor liquidativo con uno o dos días de retraso y cada w
 
 <details><summary><b>¿Qué es la TIR?</b></summary>
 
-La rentabilidad compara lo que vale tu cartera con lo que has metido. La **TIR** tiene en cuenta además **cuándo** entró y salió cada euro y lo expresa como porcentaje anual. Si aportas poco a poco, es la cifra honesta para compararte con otras inversiones.
+La **rentabilidad** mide la evolución de las inversiones. El saldo en efectivo sí cuenta en el patrimonio, pero sus cambios (por ejemplo, un gasto) no se consideran rentabilidad. La **TIR** tiene en cuenta cuándo entró y salió cada euro invertido y lo expresa como porcentaje anual. Si aportas poco a poco, es la cifra honesta para compararte con otras inversiones.
 </details>
 
 <details><summary><b>La ventana negra se cierra sola o sale un error</b></summary>
